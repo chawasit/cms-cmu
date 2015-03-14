@@ -1,0 +1,39 @@
+{% if sr is None or not sr.compiled() %}
+    <td class="status">
+        {{ _("Compiling...") }}
+    </td>
+    {% if score_type is not None and score_type.max_public_score != 0 %}
+    <td class="public_score undefined">{{ _("N/A") }}</td>
+    {% end %}
+{% elif sr.compilation_outcome == "fail" %}
+    <td class="status">
+        {{ _("Compilation failed") }}
+    </td>
+    {% if score_type is not None and score_type.max_public_score != 0 %}
+    <td class="public_score undefined">{{ _("N/A") }}</td>
+    {% end %}
+{% elif not sr.evaluated() %}
+    <td class="status">
+        {{ _("Evaluating...") }}
+    </td>
+    {% if score_type is not None and score_type.max_public_score != 0 %}
+    <td class="public_score undefined">{{ _("N/A") }}</td>
+    {% end %}
+{% elif not sr.scored() %}
+    <td class="status">
+        {{ _("Scoring...") }}
+    </td>
+    {% if score_type is not None and score_type.max_public_score != 0 %}
+    <td class="public_score undefined">{{ _("N/A") }}</td>
+    {% end %}
+{% else %}
+    <td class="status">
+        {{ _("Evaluated") }}
+    </td>
+
+    {% if score_type is not None and score_type.max_public_score != 0 %}
+    <td class="public_score {{ get_score_class(sr.public_score, score_type.max_public_score) }}">
+            {{ "%g" % round(sr.public_score, task.score_precision) }} / {{ "%g" % round(score_type.max_public_score, task.score_precision) }}
+    </td>
+    {% end %}
+{% end %}

@@ -1,0 +1,87 @@
+{% extends base.html %}
+
+{% block js %}
+	
+{% end %}
+
+{% block core %}
+
+{% from cms.server import format_token_rules, format_datetime_smart %}
+{% from cms.grading.tasktypes import get_task_type %}
+{% from cms.db import Session, Contest, User, Task, Question, Submission %}
+{% from cms.grading.scoretypes import get_score_type %}
+
+{% set sql_session = Session() %}
+{% if actual_phase == 0 %}
+<div class="page-header">
+    <h1>{{ _("Task overview") }}</h1>
+</div>
+
+<div class="table-responsive">
+	<table id="submission_list" class="table table-bordered table-striped table-hover">
+		<thead>
+			<tr>
+				<th>{{ _("Task") }}</th>
+				<th>{{ _("Name") }}</th>
+				<th class="status">{{ _("Status") }}</th>
+            	<th class="public_score">{{ _("Public score") }}</th>
+				<th>{{ _("Time limit") }}</th>
+				<th>{{ _("Memory limit") }}</th>
+				<th>{{ _("Type") }}</th>
+				<!--<th>{{ _("Files") }}</th>-->
+			</tr>
+		</thead>
+		<tbody>
+	{% set extensions = "[%s]" %  ("|".join(LANGUAGE_TO_SOURCE_EXT_MAP[lang][1:] for lang in contest.languages)) %}
+	{% for t_iter in contest.tasks %}
+			<tr onclick="window.document.location='{{ url_root }}/tasks/{{ encode_for_url(t_iter.name) }}/description'">
+				<td><a href="{{ url_root }}/tasks/{{ encode_for_url(t_iter.name) }}/description">{{ t_iter.name }}</a></td> 
+				<td>{{ t_iter.title }}</td>
+				{% set task = contest.get_task( t_iter.name ) %}
+				{% set submissions = sql_session.query(Submission).filter(Submission.user == current_user).filter(Submission.task == task).all() %}
+				{% if len(submissions)>0 %}
+					{% for s_idx, s in enumerate(sorted(submissions, key=lambda s: s.timestamp, reverse=True)) %}
+						{% try %}
+						    {% set score_type = get_score_type(dataset=task.active_dataset) %}
+						{% except %}
+						    {% set score_type = None %}
+						{% end %}
+			            {% set s_idx = len(submissions) - s_idx %}
+			            {% set sr = s.get_result(s.task.active_dataset) %}
+			            {% break %}
+			        {% end %}
+			        {% include submission_column.html %}
+			        {% set sr = None %}
+			    {% else %}
+			    	<td></td>
+			    	<td></td>
+			    {% end %}
+				<td>
+				{% if t_iter.active_dataset.time_limit is not None %}
+					{% if t_iter.active_dataset.time_limit == 1.0 %}
+						{{ _("%(seconds)g second") % {"seconds": t_iter.active_dataset.time_limit} }}
+					{% else %}
+						{{ _("%(seconds)g seconds") % {"seconds": t_iter.active_dataset.time_limit} }}
+					{% end %}
+				{% else %}
+					{{ _("N/A") }}
+				{% end %}
+				</td>
+				<td>
+		{% if t_iter.active_dataset.memory_limit is not None %}
+			{{ _("%(mb)d MiB") % {"mb": t_iter.active_dataset.memory_limit} }}
+		{% else %}
+			{{ _("N/A") }}
+		{% end %}
+				</td>
+				<td>{{ get_task_type(dataset=t_iter.active_dataset).name }}</td>
+				<!--<td>{{ " ".join(a.filename.replace("%l", extensions) for a in t_iter.submission_format) }}</td>-->
+			</tr>
+	{% end %}
+		</tbody>
+	</table>
+</div>
+
+{% end %}
+
+{% end %}
