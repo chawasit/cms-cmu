@@ -18,7 +18,7 @@
 </div>
 
 <div class="table-responsive">
-	<table id="submission_list" class="table table-bordered table-striped table-hover">
+	<table id="submission_list" class="table table-bordered table-striped table-hover sortable">
 		<thead>
 			<tr>
 				<th>{{ _("Task") }}</th>
@@ -33,6 +33,7 @@
 		</thead>
 		<tbody>
 	{% set extensions = "[%s]" %  ("|".join(LANGUAGE_TO_SOURCE_EXT_MAP[lang][1:] for lang in contest.languages)) %}
+	{% set total_score = 0 %}
 	{% for t_iter in contest.tasks %}
 			<tr onclick="window.document.location='{{ url_root }}/tasks/{{ encode_for_url(t_iter.name) }}/description'">
 				<td><a href="{{ url_root }}/tasks/{{ encode_for_url(t_iter.name) }}/description">{{ t_iter.name }}</a></td> 
@@ -80,6 +81,8 @@
 	{% end %}
 		</tbody>
 	</table>
+
+	<h4>Total Score: <b>{{ total_score }}</b></h4>
 </div>
 
 {% end %}

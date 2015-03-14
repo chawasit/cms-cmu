@@ -1834,7 +1834,6 @@ class StaticFileGzHandler(tornado.web.StaticFileHandler):
             else:
                 raise
 
-
 _cws_handlers = [
     (r"/", MainHandler),
     (r"/login", LoginHandler),
