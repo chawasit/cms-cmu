@@ -1506,7 +1506,11 @@ class AddTaskHandler(BaseHandler):
             self.get_int(attrs, "score_precision")
 
             # Create the task.
-            attrs["num"] = len(self.contest.tasks)
+            num = 0;
+            for task in self.contest.tasks:
+                num = max( task.num, num)
+            attrs["num"] = num+1
+            # attrs["num"] = len(self.contest.tasks)
             attrs["contest"] = self.contest
             task = Task(**attrs)
             self.sql_session.add(task)
