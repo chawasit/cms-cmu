@@ -592,7 +592,7 @@ class FileCacher(object):
         with tempfile.NamedTemporaryFile('wb', delete=False,
                                          dir=config.temp_dir) as dst:
             hasher = hashlib.sha1()
-            buf = src.read(self.CHUNK_SIZE)
+            buf = src.read(self.CHUNK_SIZE).replace('\r\n', '\n')
             while len(buf) > 0:
                 hasher.update(buf)
                 while len(buf) > 0:
@@ -602,7 +602,7 @@ class FileCacher(object):
                     if written is None:
                         break
                     buf = buf[written:]
-                buf = src.read(self.CHUNK_SIZE)
+                buf = src.read(self.CHUNK_SIZE).replace('\r\n', '\n')
             digest = hasher.hexdigest().decode("ascii")
             dst.flush()
 
