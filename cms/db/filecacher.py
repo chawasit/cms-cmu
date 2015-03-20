@@ -589,7 +589,7 @@ class FileCacher(object):
         # faster than reading the whole file-obj again (as it could be
         # compressed or require network communication).
         # XXX We're *almost* reimplementing copyfileobj.
-        with tempfile.NamedTemporaryFile('wb', delete=False,
+        with tempfile.NamedTemporaryFile('w+b', delete=False,
                                          dir=config.temp_dir) as dst:
             hasher = hashlib.sha1()
             buf = src.read(self.CHUNK_SIZE).replace('\r\n', '\n')
@@ -603,6 +603,14 @@ class FileCacher(object):
                         break
                     buf = buf[written:]
                 buf = src.read(self.CHUNK_SIZE).replace('\r\n', '\n')
+            endline = dst.read()
+            if endline.endswith('\n'):
+                # It's ok, Do nothing
+                pass
+            else:
+                # Sometime it cause incorrect evaluation, add \n
+                dst.write('\n')
+
             digest = hasher.hexdigest().decode("ascii")
             dst.flush()
 
