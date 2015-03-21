@@ -1263,11 +1263,11 @@ class AddTestcaseHandler(BaseHandler):
 
         try:
             input_digest = \
-                self.application.service.file_cacher.put_file_content(
+                self.application.service.file_cacher.put_testcase_content(
                     input_["body"],
                     "Testcase input for task %s" % task_name)
             output_digest = \
-                self.application.service.file_cacher.put_file_content(
+                self.application.service.file_cacher.put_testcase_content(
                     output["body"],
                     "Testcase output for task %s" % task_name)
         except Exception as error:
@@ -1404,11 +1404,11 @@ class AddTestcasesHandler(BaseHandler):
                         return
                     try:
                         input_digest = self.application.service\
-                            .file_cacher.put_file_content(
+                            .file_cacher.put_testcase_content(
                                 input_,
                                 "Testcase input for task %s" % task_name)
                         output_digest = self.application.service\
-                            .file_cacher.put_file_content(
+                            .file_cacher.put_testcase_content(
                                 output,
                                 "Testcase output for task %s" % task_name)
                     except Exception as error:

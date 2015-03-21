@@ -664,6 +664,66 @@ class FileCacher(object):
         with io.open(src_path, 'rb') as src:
             return self.put_file_from_fobj(src, desc)
 
+    """
+        Testcase Add Start
+    """
+    def put_testcase_from_fobj(self, src, desc=""):
+        
+        logger.debug("Reading input file to store on the database.")
+
+        with tempfile.NamedTemporaryFile('w+b', delete=False,
+                                         dir=config.temp_dir) as dst:
+            hasher = hashlib.sha1()
+            buf = src.read(self.CHUNK_SIZE).replace("\r\n","\n").replace("\r","")
+            while len(buf) > 0:
+                hasher.update(buf)
+                while len(buf) > 0:
+                    written = dst.write(buf)
+                    # Cooperative yield.
+                    gevent.sleep(0)
+                    if written is None:
+                        break
+                    buf = buf[written:]
+                buf = src.read(self.CHUNK_SIZE).replace("\r\n","\n").replace("\r","")
+            digest = hasher.hexdigest().decode("ascii")
+            dst.flush()
+
+            endline = dst.read()
+            if endline.endswith("\n"):
+                pass
+            else:
+                dst.write("\n")
+            dst.flush()
+            
+            logger.debug("Testcase has digest %s." % digest)
+
+            cache_file_path = os.path.join(self.file_dir, digest)
+
+            if not os.path.exists(cache_file_path):
+                move(dst.name, cache_file_path)
+            else:
+                os.unlink(dst.name)
+
+        # Store the file in the backend. We do that even if the file
+        # was already in the cache (that is, we ignore the check above)
+        # because there's a (small) chance that the file got removed
+        # from the backend but somehow remained in the cache.
+        self.save(digest, desc)
+
+        return digest
+
+    def put_testcase_content(self, content, desc=""):
+        with io.BytesIO(content) as src:
+            return self.put_testcase_from_fobj(src, desc)
+
+    def put_testcase_from_path(self, src_path, desc=""):
+        with io.open(src_path, 'rb') as src:
+            return self.put_testcase_from_fobj(src, desc)
+
+    """
+        Testcase Add End
+    """
+
     def describe(self, digest):
         """Return the description of a file given its digest.
 
