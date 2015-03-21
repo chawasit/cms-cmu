@@ -589,10 +589,10 @@ class FileCacher(object):
         # faster than reading the whole file-obj again (as it could be
         # compressed or require network communication).
         # XXX We're *almost* reimplementing copyfileobj.
-        with tempfile.NamedTemporaryFile('w+b', delete=False,
+        with tempfile.NamedTemporaryFile('wb', delete=False,
                                          dir=config.temp_dir) as dst:
             hasher = hashlib.sha1()
-            buf = src.read(self.CHUNK_SIZE).replace('\r\n', '\n')
+            buf = src.read(self.CHUNK_SIZE)
             while len(buf) > 0:
                 hasher.update(buf)
                 while len(buf) > 0:
@@ -602,15 +602,7 @@ class FileCacher(object):
                     if written is None:
                         break
                     buf = buf[written:]
-                buf = src.read(self.CHUNK_SIZE).replace('\r\n', '\n')
-            endline = dst.read()
-            if endline.endswith('\n'):
-                # It's ok, Do nothing
-                pass
-            else:
-                # Sometime it cause incorrect evaluation, add \n
-                dst.write('\n')
-
+                buf = src.read(self.CHUNK_SIZE)
             digest = hasher.hexdigest().decode("ascii")
             dst.flush()
 
@@ -671,10 +663,10 @@ class FileCacher(object):
         
         logger.debug("Reading input file to store on the database.")
 
-        with tempfile.NamedTemporaryFile('w+b', delete=False,
+        with tempfile.NamedTemporaryFile('wb', delete=False,
                                          dir=config.temp_dir) as dst:
             hasher = hashlib.sha1()
-            buf = src.read(self.CHUNK_SIZE).replace("\r\n","\n").replace("\r","")
+            buf = src.read(self.CHUNK_SIZE).replace('\r\n', '\n').replace('\r','')
             while len(buf) > 0:
                 hasher.update(buf)
                 while len(buf) > 0:
@@ -684,15 +676,16 @@ class FileCacher(object):
                     if written is None:
                         break
                     buf = buf[written:]
-                buf = src.read(self.CHUNK_SIZE).replace("\r\n","\n").replace("\r","")
-            digest = hasher.hexdigest().decode("ascii")
-            dst.flush()
-
+                buf = src.read(self.CHUNK_SIZE).replace('\r\n', '\n').replace('\r','')
             endline = dst.read()
-            if endline.endswith("\n"):
+            if endline.endswith('\n'):
+                # It's ok, Do nothing
                 pass
             else:
-                dst.write("\n")
+                # Sometime it cause incorrect evaluation, add \n
+                dst.write('\n')
+
+            digest = hasher.hexdigest().decode("ascii")
             dst.flush()
             
             logger.debug("Testcase has digest %s." % digest)
