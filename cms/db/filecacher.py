@@ -242,7 +242,7 @@ class DBBackend(FileCacherBackend):
                 # Check digest uniqueness
                 if fso is not None:
                     logger.debug("File %s already stored on database, not "
-                                 "sending it again." % digest)
+                                 "sending it again.", digest)
                     session.rollback()
                     return None
 
@@ -254,7 +254,7 @@ class DBBackend(FileCacherBackend):
 
                     session.add(fso)
 
-                    logger.debug("File %s stored on the database." % digest)
+                    logger.debug("File %s stored on the database.", digest)
 
                     # FIXME There is a remote possibility that someone
                     # will try to access this file, believing it has
@@ -268,7 +268,7 @@ class DBBackend(FileCacherBackend):
                     return lobject
 
         except IntegrityError:
-            logger.warning("File %s caused an IntegrityError, ignoring..." %
+            logger.warning("File %s caused an IntegrityError, ignoring...",
                            digest)
 
     def describe(self, digest):
@@ -427,21 +427,26 @@ class FileCacher(object):
             logger.error("Cannot create necessary directories.")
             raise RuntimeError("Cannot create necessary directories.")
 
-    def load(self, digest):
+    def load(self, digest, if_needed=False):
         """Load the file with the given digest into the cache.
 
         Ask the backend to provide the file and, if it's available,
         copy its content into the file-system cache.
 
         digest (unicode): the digest of the file to load.
+        if_needed (bool): only load the file if it is not present in
+            the local cache.
 
         raise (KeyError): if the backend cannot find the file.
 
         """
+        cache_file_path = os.path.join(self.file_dir, digest)
+        if if_needed and os.path.exists(cache_file_path):
+            return
+
         ftmp_handle, temp_file_path = tempfile.mkstemp(dir=self.temp_dir,
                                                        text=False)
         ftmp = os.fdopen(ftmp_handle, 'w')
-        cache_file_path = os.path.join(self.file_dir, digest)
 
         fobj = self.backend.get_file(digest)
 
@@ -477,15 +482,15 @@ class FileCacher(object):
         """
         cache_file_path = os.path.join(self.file_dir, digest)
 
-        logger.debug("Getting file %s." % digest)
+        logger.debug("Getting file %s.", digest)
 
         if not os.path.exists(cache_file_path):
             logger.debug("File %s not in cache, downloading "
-                         "from database." % digest)
+                         "from database.", digest)
 
             self.load(digest)
 
-            logger.debug("File %s downloaded." % digest)
+            logger.debug("File %s downloaded.", digest)
 
         return io.open(cache_file_path, 'rb')
 
@@ -606,7 +611,7 @@ class FileCacher(object):
             digest = hasher.hexdigest().decode("ascii")
             dst.flush()
 
-            logger.debug("File has digest %s." % digest)
+            logger.debug("File has digest %s.", digest)
 
             cache_file_path = os.path.join(self.file_dir, digest)
 
@@ -639,30 +644,33 @@ class FileCacher(object):
         with io.BytesIO(content) as src:
             return self.put_file_from_fobj(src, desc)
 
-    def put_file_from_path(self, src_path, desc=""):
+    def put_testcase_from_fobj(self, src, desc=""):
         """Store a file in the storage.
 
-        See `put_file_from_fobj'. This method will read the content of
-        the file from the given file-system location.
+        If it's already (for some reason...) in the cache send that
+        copy to the backend. Otherwise store it in the file-system
+        cache first.
 
-        src_path (string): an accessible location on the file-system
-            from which to read the contents of the file.
+        The file is obtained from a file-object. Other interfaces are
+        available as `put_testcase_content', `put_testcase_from_path'.
+
+        src (fileobj): a readable binary file-like object from which
+            to read the contents of the file.
         desc (unicode): the (optional) description to associate to the
             file.
 
         return (unicode): the digest of the stored file.
 
         """
-        with io.open(src_path, 'rb') as src:
-            return self.put_file_from_fobj(src, desc)
+        logger.debug("Reading testcase file to store on the database.")
 
-    """
-        Testcase Add Start
-    """
-    def put_testcase_from_fobj(self, src, desc=""):
-        
-        logger.debug("Reading input file to store on the database.")
-
+        # Unfortunately, we have to read the whole file-obj to compute
+        # the digest but we take that chance to save it to a temporary
+        # path so that we then just need to move it. Hoping that both
+        # locations will be on the same filesystem, that should be way
+        # faster than reading the whole file-obj again (as it could be
+        # compressed or require network communication).
+        # XXX We're *almost* reimplementing copyfileobj.
         with tempfile.NamedTemporaryFile('wb', delete=False,
                                          dir=config.temp_dir) as dst:
             hasher = hashlib.sha1()
@@ -677,18 +685,18 @@ class FileCacher(object):
                         break
                     buf = buf[written:]
                 buf = src.read(self.CHUNK_SIZE).replace('\r\n', '\n').replace('\r','')
+            dst.seek(0,0)
             endline = dst.read()
+
             if endline.endswith('\n'):
-                # It's ok, Do nothing
                 pass
             else:
-                # Sometime it cause incorrect evaluation, add \n
                 dst.write('\n')
 
             digest = hasher.hexdigest().decode("ascii")
             dst.flush()
-            
-            logger.debug("Testcase has digest %s." % digest)
+
+            logger.debug("File has digest %s.", digest)
 
             cache_file_path = os.path.join(self.file_dir, digest)
 
@@ -706,16 +714,37 @@ class FileCacher(object):
         return digest
 
     def put_testcase_content(self, content, desc=""):
+        """Store a file in the storage.
+
+        See `put_testcase_from_fobj'. This method will read the content of
+        the file from the given binary string.
+
+        content (bytes): the content of the file to store.
+        desc (unicode): the (optional) description to associate to the
+            file.
+
+        return (unicode): the digest of the stored file.
+
+        """
         with io.BytesIO(content) as src:
             return self.put_testcase_from_fobj(src, desc)
 
-    def put_testcase_from_path(self, src_path, desc=""):
-        with io.open(src_path, 'rb') as src:
-            return self.put_testcase_from_fobj(src, desc)
+    def put_file_from_path(self, src_path, desc=""):
+        """Store a file in the storage.
 
-    """
-        Testcase Add End
-    """
+        See `put_file_from_fobj'. This method will read the content of
+        the file from the given file-system location.
+
+        src_path (string): an accessible location on the file-system
+            from which to read the contents of the file.
+        desc (unicode): the (optional) description to associate to the
+            file.
+
+        return (unicode): the digest of the stored file.
+
+        """
+        with io.open(src_path, 'rb') as src:
+            return self.put_file_from_fobj(src, desc)
 
     def describe(self, digest):
         """Return the description of a file given its digest.
@@ -806,7 +835,7 @@ class FileCacher(object):
 
         """
         clean = True
-        for digest, description in self.list():
+        for digest, _ in self.list():
             fobj = self.backend.get_file(digest)
             hasher = hashlib.sha1()
             try:
@@ -818,8 +847,8 @@ class FileCacher(object):
                 fobj.close()
             computed_digest = hasher.hexdigest().decode("ascii")
             if digest != computed_digest:
-                logger.error("File with hash %s actually has hash %s" %
-                             (digest, computed_digest))
+                logger.error("File with hash %s actually has hash %s",
+                             digest, computed_digest)
                 if delete:
                     self.delete(digest)
                 clean = False

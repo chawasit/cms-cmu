@@ -33,6 +33,14 @@
 #include <sys/quota.h>
 #include <sys/vfs.h>
 
+/* May not be defined in older glibc headers */
+#ifndef MS_PRIVATE
+#define MS_PRIVATE (1 << 18)
+#endif
+#ifndef MS_REC
+#define MS_REC     (1 << 14)
+#endif
+
 #define NONRET __attribute__((noreturn))
 #define UNUSED __attribute__((unused))
 #define ARRAY_SIZE(a) (int)(sizeof(a)/sizeof(a[0]))
@@ -42,6 +50,7 @@ static int wall_timeout;
 static int extra_timeout;
 static int pass_environ;
 static int verbose;
+static int fsize_limit;
 static int memory_limit;
 static int stack_limit;
 static int block_quota;
@@ -94,9 +103,13 @@ meta_open(const char *name)
       metafile = stdout;
       return;
     }
-  setreuid(geteuid(), getuid());
+  if (setreuid(geteuid(), getuid()) == -1)
+    die("Failed to setreuid: %m");
+
   metafile = fopen(name, "w");
-  setreuid(geteuid(), getuid());
+  if (setreuid(geteuid(), getuid()) == -1)
+    die("Failed to setreuid: %m");
+
   if (!metafile)
     die("Failed to open metafile '%s'",name);
 }
@@ -1235,7 +1248,10 @@ setup_rlimits(void)
 #define RLIM(res, val) setup_rlim("RLIMIT_" #res, RLIMIT_##res, val)
 
   if (memory_limit)
-    RLIM(AS, memory_limit * 1024);
+    RLIM(AS, (rlim_t)memory_limit * 1024);
+
+  if (fsize_limit)
+    RLIM(FSIZE, (rlim_t)fsize_limit * 1024);
 
   RLIM(STACK, (stack_limit ? (rlim_t)stack_limit * 1024 : RLIM_INFINITY));
   RLIM(NOFILE, 64);
@@ -1371,9 +1387,10 @@ Usage: isolate [<options>] <command>\n\
 \n\
 Options:\n\
 -b, --box-id=<id>\tWhen multiple sandboxes are used in parallel, each must get a unique ID\n\
--c, --cg[=<parent>]\tPut process in a control group (optionally a sub-group of <parent>)\n\
+    --cg\t\tEnable use of control groups\n\
     --cg-mem=<size>\tLimit memory usage of the control group to <size> KB\n\
     --cg-timing\t\tTime limits affects total run time of the control group\n\
+-c, --chdir=<dir>\tChange directory to <dir> before executing the program\n\
 -d, --dir=<dir>\t\tMake a directory <dir> visible inside the sandbox\n\
     --dir=<in>=<out>\tMake a directory <out> outside visible as <in> inside\n\
     --dir=<in>=\t\tDelete a previously defined directory rule (even a default one)\n\
@@ -1383,6 +1400,7 @@ Options:\n\
 \t\t\t\tmaybe\tSkip the rule if <out> does not exist\n\
 \t\t\t\tnoexec\tDo not allow execution of binaries\n\
 \t\t\t\trw\tAllow read-write access\n\
+-f, --fsize=<size>\tMax size (in KB) of files that can be created\n\
 -E, --env=<var>\t\tInherit the environment variable <var> from the parent process\n\
 -E, --env=<var>=<val>\tSet the environment variable <var> to <val>; unset it if <var> is empty\n\
 -x, --extra-time=<time>\tSet extra timeout, before which a timing-out program is not yet killed,\n\
@@ -1429,6 +1447,7 @@ static const struct option long_opts[] = {
   { "cg-timing",	0, NULL, OPT_CG_TIMING },
   { "cleanup",		0, NULL, OPT_CLEANUP },
   { "dir",		1, NULL, 'd' },
+  { "fsize",           1, NULL, 'f' },
   { "env",		1, NULL, 'E' },
   { "extra-time",	1, NULL, 'x' },
   { "full-env",		0, NULL, 'e' },
@@ -1474,6 +1493,9 @@ main(int argc, char **argv)
 	if (!set_dir_action(optarg))
 	  usage("Invalid directory specified: %s\n", optarg);
 	break;
+      case 'f':
+        fsize_limit = atoi(optarg);
+        break;
       case 'e':
 	pass_environ = 1;
 	break;

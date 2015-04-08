@@ -7,7 +7,7 @@ $(document).on("click", ".user_test_list tbody tr td.status .details", function 
     var task_id = $this.parent().parent().parent().parent().attr("data-task");
     var user_test_id = $this.parent().parent().attr("data-user-test");
     var modal = $("#user_test_detail");
-    var modal_body = $("#user_test_detail_body");
+    var modal_body = modal.children(".modal-body");
     modal_body.html('<div class="loading"><img src="{{ url_root }}/static/loading.gif"/>{{ _("loading...") }}</div>');
     modal_body.load("{{ url_root }}/tasks/" + encodeURIComponent(task_id) + "/tests/" + user_test_id + "/details");
     modal.modal("show");
@@ -64,9 +64,12 @@ $(document).ready(function () {
 
 {% if actual_phase == 0 %}
 
+<div class="span9 test_interface">
+
 <div class="page-header">
     <h1>{{ _("Testing") }}</h1>
 </div>
+
 
 <ul class="nav nav-tabs">
 {% for i, task in enumerate(contest.tasks) %}
@@ -85,37 +88,67 @@ $(document).ready(function () {
 
 <h2 style="margin-bottom: 10px">{{ _("Submit a test") }}</h2>
 
-<div id="submit_solution" class="submit_test">
-	<form class="form-horizontal" enctype="multipart/form-data" action="{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/test" method="POST">
-		<fieldset>
-{% for idx, filename in enumerate([x.filename for x in task.submission_format] + task_type.get_user_managers(task.submission_format)) %}
-			<div class="control-group">
-				<label class="control-label" for="input{{ idx }}">{{ filename.replace(".%l", "") }}</label>
-				<div class="controls">
-					<input type="file" class="input-xlarge" id="input{{ idx }}" name="{{ filename }}"/>
-				</div>
-			</div>
+{% if user_tests_left[task.id] is not None %}
+    <div class="span5">
+        <p>
+        {{ _("You can submit %(user_tests_left)s more test(s).") % {"user_tests_left": user_tests_left[task.id]} }}
+        </p>
+    </div>
 {% end %}
-			<div class="control-group">
-				<label class="control-label" for="input_file">{{ _("Input") }}</label>
-				<div class="controls">
-					<input type="file" class="input-xlarge" id="input_file" name="input"/>
-				</div>
-			</div>
-			<div class="control-group">
-				<div class="controls">
-					<button type="submit" class="btn btn-sm btn-success">{{ _("Submit") }}</button>
-					<button type="reset" class="btn btn-sm">{{ _("Reset") }}</button>
-				</div>
-			</div>
-		</fieldset>
-	</form>
+
+<div class="submit_test row">
+    <div class="span5">
+        <form class="form-horizontal" enctype="multipart/form-data" action="{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/test" method="POST">
+            <fieldset>
+{% for idx, filename in enumerate([x.filename for x in task.submission_format] + task_type.get_user_managers(task.submission_format)) %}
+                <div class="control-group">
+                    <label class="control-label" for="input{{ idx }}">{{ filename.replace(".%l", "") }}</label>
+                    <div class="controls">
+                        <input type="file" class="input-xlarge" id="input{{ idx }}" name="{{ filename }}"/>
+                    </div>
+                </div>
+{% end %}
+                <div class="control-group">
+                    <label class="control-label" for="input_file">{{ _("input") }}</label>
+                    <div class="controls">
+                        <input type="file" class="input-xlarge" id="input_file" name="input"/>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <button type="submit" class="btn btn-success">{{ _("Submit") }}</button>
+                        <button type="reset" class="btn">{{ _("Reset") }}</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <div class="span4">
+        <form class="form-horizontal" enctype="multipart/form-data" action="{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/test" method="POST">
+            <fieldset>
+                <div class="control-group">
+                    <label class="control-label" for="input_zip">{{ _("submission.zip") }}</label>
+                    <div class="controls">
+                        <input type="file" class="input-xlarge" id="input_zip" name="submission"/>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <button type="submit" class="btn btn-success">{{ _("Submit") }}</button>
+                        <button type="reset" class="btn">{{ _("Reset") }}</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
 </div>
+
 
 <h2 style="margin: 40px 0 10px">{{ _("Previous tests") }}</h2>
 
 {% from cmscommon.datetime import utc %}
 {% set show_date = any(t.timestamp.replace(tzinfo=utc).astimezone(timezone).date() != datetime.datetime.utcnow().replace(tzinfo=utc).astimezone(timezone).date() for t in user_tests[task.id]) %}
+
 
 <table class="user_test_list table table-bordered table-striped" data-task="{{ task.name }}">
     <colgroup>
@@ -161,27 +194,27 @@ $(document).ready(function () {
     </tbody>
 </table>
 
+
+
+
 </div>
     {% end %}
 {% end %}
 </div>
 
-<div class="modal fade wide" id="user_test_detail" tabindex="-1" role="dialog" aria-labelledby="userTestLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="userTestLabel">{{ _("Test details") }}</h4>
-      </div>
-      <div id="user_test_detail_body" class="modal-body">
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-primary" data-dismiss="modal">{{ _("Close") }}</button>
-      </div>
+<div class="modal fade hide" id="user_test_detail">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&#xD7;</button>
+        <h3>{{ _("Test details") }}</h3>
     </div>
-  </div>
+    <div class="modal-body">
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">{{ _("Close") }}</a>
+    </div>
 </div>
 
+</div>
 {% end %}
 
 {% end %}

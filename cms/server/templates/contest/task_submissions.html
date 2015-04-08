@@ -5,7 +5,7 @@
 $(document).on("click", "#submission_list tbody tr td.status .details", function (event) {
     var submission_id = $(this).parent().parent().attr("data-submission");
     var modal = $("#submission_detail");
-    var modal_body = $("#submission_detail_body");
+    var modal_body = modal.children(".modal-body");
     modal_body.html('<div class="loading"><img src="{{ url_root }}/static/loading.gif"/>{{ _("loading...") }}</div>');
     modal_body.load("{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/submissions/" + submission_id + "/details", function() {
         $(".score_details .subtask .subtask-head").each(function () {
@@ -50,6 +50,14 @@ update_submission_row = function (submission_id, data) {
             }
             row.children("td.public_score").removeClass("undefined").html(public_score);
         }
+        if (data["score"] != undefined) {
+            var score = data["score"];
+            if (data["max_score"] != undefined) {
+                row.children("td.total_score").addClass(get_score_class(parseFloat(data["score"]), parseFloat(data["max_score"])));
+                score += " / " + data["max_score"];
+            }
+            row.children("td.total_score").removeClass("undefined").html(score);
+        }
     } else if (data["status"] != 2) {
         schedule_update_submission_row(submission_id);
     }
@@ -74,11 +82,23 @@ $(document).ready(function () {
 {% block core %}
 
 {% if actual_phase == 0 %}
+
+<div class="span9 task_submissions">
+
 <div class="page-header">
     <h1>{% raw _("%(name)s (%(short_name)s) <small>submissions</small>") % {"name": task.title, "short_name": task.name} %}</small></h1>
 </div>
 
+
 <h2 style="margin-bottom: 10px">{{ _("Submit a solution") }}</h2>
+
+{% if submissions_left is not None %}
+    <div class="span5">
+        <p>
+        {{ _("You can submit %(submissions_left)s more solution(s).") % {"submissions_left": submissions_left} }}
+        </p>
+    </div>
+{% end %}
 
 <div id="submit_solution" class="row">
     <div class="span5">
@@ -94,17 +114,77 @@ $(document).ready(function () {
 {% end %}
                 <div class="control-group">
                     <div class="controls">
-                        <button type="submit" class="btn btn-sm btn-success">{{ _("Submit") }}</button>
-                        <button type="reset" class="btn btn-sm">{{ _("Reset") }}</button>
+                        <button type="submit" class="btn btn-success">{{ _("Submit") }}</button>
+                        <button type="reset" class="btn">{{ _("Reset") }}</button>
                     </div>
                 </div>
             </fieldset>
         </form>
     </div>
+{% if len(task.submission_format) > 1 %}
+    <div class="span4">
+        <form class="form-horizontal" enctype="multipart/form-data" action="{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/submit" method="POST">
+            <fieldset>
+                <div class="control-group">
+                    <label class="control-label" for="input_zip">{{ _("submission.zip") }}</label>
+                    <div class="controls">
+                        <input type="file" class="input-xlarge" id="input_zip" name="submission"/>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <button type="submit" class="btn btn-success">{{ _("Submit") }}</button>
+                        <button type="reset" class="btn">{{ _("Reset") }}</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+{% end %}
 </div>
 
 
 <h2 style="margin: 40px 0 10px">{{ _("Previous submissions") }}</h2>
+
+{% if tokens_contest != 0 and tokens_tasks != 0 %}
+<div style="padding-bottom:10px">
+    {% set tokens_info = contest.tokens_available(current_user.username, task.name, timestamp) %}
+    {% set can_play_token = tokens_info[0] > 0 or tokens_info[0] == -1 %}
+    {% set need_to_wait = tokens_info[2] is not None %}
+    {% if can_play_token %}
+        {% if tokens_info[0] == -1 %}
+            {{ _("Right now, you have infinite tokens available on this task.") }}
+        {% elif tokens_info[0] == 1 %}
+            {{ _("Right now, you have one token available on this task.") }}
+        {% else %}
+            {{ _("Right now, you have %(tokens)s tokens available on this task.") % { "tokens": tokens_info[0]} }}
+        {% end %}
+        {% if need_to_wait %}
+            {% set t = format_datetime_smart(tokens_info[2], timezone, locale=locale) %}
+            {% raw _("But you have to wait until %(expiration_time)s to use them.") % {"expiration_time": t} %}
+        {% end %}
+        {% if tokens_info[1] is not None %}
+            {% set t = format_datetime_smart(tokens_info[1], timezone, locale=locale) %}
+            {{ _("You will receive a new token at %(gen_time)s.") % {"gen_time": t} }}
+        {% else %}
+            {{ _("In the current situation, no more tokens will be generated.") }}
+        {% end %}
+    {% else %}
+        {{ _("Right now, you do not have tokens available for this task.") }}
+        {% if tokens_info[1] is not None %}
+            {% set t = format_datetime_smart(tokens_info[1], timezone, locale=locale) %}
+            {{ _("You will receive a new token at %(gen_time)s.") % {"gen_time": t} }}
+            {% if tokens_info[2] is not None and tokens_info[2] > tokens_info[1] %}
+                {% set t = format_datetime_smart(tokens_info[2], timezone, locale=locale) %}
+                {{ _("But you will have to wait until %(expiration_time)s to use it.") % {"expiration_time": t} }}
+            {% end %}
+        {% else %}
+            {{ _("In the current situation, no more tokens will be generated.") }}
+        {% end %}
+    {% end %}
+</div>
+{% end %}
+
 
 {% from cms.grading.scoretypes import get_score_type %}
 {% try %}
@@ -125,7 +205,12 @@ $(document).ready(function () {
         <col class="time"/>
 {% end %}
         <col class="status"/>
+{% if score_type is not None and score_type.max_public_score != 0 and score_type.max_public_score != score_type.max_score %}
         <col class="public_score"/>
+        <col class="total_score"/>
+{% else %}
+        <col class="total_score"/>
+{% end %}
         <col class="files"/>
 {% if tokens_contest != 0 and tokens_tasks != 0 %}
         <col class="token"/>
@@ -139,7 +224,12 @@ $(document).ready(function () {
             <th class="time">{{ _("Time") }}</th>
 {% end %}
             <th class="status">{{ _("Status") }}</th>
+{% if score_type is not None and score_type.max_public_score != 0 and score_type.max_public_score != score_type.max_score %}
             <th class="public_score">{{ _("Public score") }}</th>
+            <th class="total_score">{{ _("Total score") }}</th>
+{% else %}
+            <th class="total_score">{{ _("Score") }}</th>
+{% end %}
             <th class="files">{{ _("Files") }}</th>
 {% if tokens_contest != 0 and tokens_tasks != 0 %}
             <th class="token">{{ _("Token") }}</th>
@@ -165,22 +255,19 @@ $(document).ready(function () {
     </tbody>
 </table>
 
-<div class="modal fade wide" id="submission_detail" tabindex="-1" role="dialog" aria-labelledby="submissionLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="submissionLabel">{{ _("Submission details") }}</h4>
-      </div>
-      <div id="submission_detail_body" class="modal-body">
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-primary" data-dismiss="modal">{{ _("Close") }}</button>
-      </div>
+<div class="modal fade hide wide" id="submission_detail">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&#xD7;</button>
+        <h3>{{ _("Submission details") }}</h3>
     </div>
-  </div>
+    <div class="modal-body">
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">{{ _("Close") }}</a>
+    </div>
 </div>
 
+</div>
 {% end %}
 
 {% end %}

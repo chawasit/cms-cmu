@@ -185,7 +185,7 @@ var Scoreboard = new function () {
                 var t_id = task["key"];
 
                 result += " \
-    <th colspan=\"3\" title=\"" + task["name"] + "\" class=\"score task\" data-task=\"" + t_id + "\" data-sort_key=\"t_" + t_id + "\"><abbr title=\"" + task["name"] + "\">" + task["short_name"] + "</abbr></th>";
+    <th colspan=\"3\" class=\"score task\" data-task=\"" + t_id + "\" data-sort_key=\"t_" + t_id + "\"><abbr title=\"" + task["name"] + "\">" + task["short_name"] + "</abbr></th>";
             }
 
             result += " \
