@@ -88,6 +88,16 @@ class User(Base):
         Unicode,
         nullable=True)
 
+    # User Contest Group
+    rpg = Column(
+        Boolean,
+        nullable=False,
+        default=False)
+    contest_group = Column(
+        Unicode,
+        nullable=False,
+        default="1")
+
     # A hidden user is used only for debugging purpose.
     hidden = Column(
         Boolean,

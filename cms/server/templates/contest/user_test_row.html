@@ -50,22 +50,22 @@
     </td>
 {% end %}
     <td class="input">
-        <a class="btn" href="{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/tests/{{ t_idx }}/input">
+        <a class="btn btn-xs btn-primary" href="{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/tests/{{ t_idx }}/input">
             {{ _("Download") }}
         </a>
     </td>
     <td class="output">
     {% if tr is None or not tr.compiled() or (tr.compilation_outcome == 'ok' and not tr.evaluated()) %}
-        <a class="btn btn-primary disabled">
+        <a class="btn btn-xs btn-primary disabled">
             {{ _("Wait...") }}
         </a>
     {% else %}
         {% if tr.output is None %}
-        <a class="btn btn-primary disabled">
+        <a class="btn btn-xs btn-primary disabled">
             {{ _("N/A") }}
         </a>
         {% else %}
-        <a class="btn btn-primary" href="{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/tests/{{ t_idx }}/output">
+        <a class="btn btn-xs btn-primary" href="{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/tests/{{ t_idx }}/output">
             {{ _("Download") }}
         </a>
         {% end %}
@@ -82,7 +82,7 @@
         </a>
         {% elif len(files) == 1 %}
             {% set filename = t.files.keys()[0] %}
-        <a class="btn" href="{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/tests/{{ t_idx }}/files/{{ encode_for_url(filename) }}">
+        <a class="btn btn-xs btn-primary" href="{{ url_root }}/tasks/{{ encode_for_url(task.name) }}/tests/{{ t_idx }}/files/{{ encode_for_url(filename) }}">
             {{ _("Download") }}
         </a>
         {% else %}

@@ -105,6 +105,21 @@ def check_ip(client, wanted):
     return (wanted & snmask) == (client & snmask)
 
 
+def allow_contest(user, contest_id):
+    group = user.contest_group
+    if user.rpg == False:
+        if group == "all":
+            return contest_id
+        else:
+            contests = group.split(",")
+            if str(contest_id) in contests:
+                return contest_id
+            else:
+                return contests[0]
+    else:
+        # In Development
+        pass
+
 class BaseHandler(CommonRequestHandler):
     """Base RequestHandler for this application.
 
@@ -127,30 +142,27 @@ class BaseHandler(CommonRequestHandler):
         self.set_header("Cache-Control", "no-cache, must-revalidate")
 
         self.sql_session = Session()
+        self.user_contest = Contest.get_from_id(self.application.service.contest,
+                                        self.sql_session)
 
+        from cms.db import is_contest_id
+        user = self.get_current_user()
+        contest_id = 1
         if self.get_secure_cookie("contest") is not None:
             # Parse cookie.
             try:
                 cookie = pickle.loads(self.get_secure_cookie("contest"))
-                print("get contest cookie: "+str(cookie))
-                contest_id = cookie[0]
-                from cms.db import is_contest_id
-                if not is_contest_id(contest_id):
-                    self.contest = Contest.get_from_id( 1,
-                                                    self.sql_session)
-                else:
-                    self.contest = Contest.get_from_id( contest_id,
-                                                    self.sql_session)
+                contest_id = allow_contest(user, cookie[0])
             except:
                 self.clear_cookie("contest")
-                self.contest = Contest.get_from_id( 1,
-                                                self.sql_session)
+                contest_id = allow_contest(user, 1)
         else:
-            self.contest = Contest.get_from_id( 1,
-                                            self.sql_session)
+            contest_id = allow_contest(user, 1)
 
-        self.user_contest = Contest.get_from_id(self.application.service.contest,
-                                           self.sql_session)
+
+        self.contest = Contest.get_from_id( contest_id,
+                                        self.sql_session)
+
         self._ = self.locale.translate
 
         self.r_params = self.render_params()
@@ -510,16 +522,21 @@ class ChangeContestHandler(BaseHandler):
     """
     def get(self, contest_id):
         from cms.db import is_contest_id
-        if not is_contest_id(contest_id):
-            self.contest = Contest.get_from_id( 1,
-                                            self.sql_session)
-        else:
-            self.clear_cookie("contest")
+        self.clear_cookie("contest")
+        user = self.get_current_user()
+
+        if is_contest_id(contest_id):
+            contest_id = allow_contest(user, contest_id)
             self.set_secure_cookie("contest",
                                        pickle.dumps((contest_id,
                                                      make_timestamp())),
                                        expires_days=None)
-            print("set contest "+contest_id)
+            logger.info("Change Contest: user=%s remote_ip=%s contest=%s.",
+                    user.username, self.request.remote_ip, str(contest_id) )
+        else:
+            logger.error("Change Contest: user=%s remote_ip=%s contest=%s.",
+                    user.username, self.request.remote_ip, str(contest_id) )
+
         self.redirect("/")
 
 

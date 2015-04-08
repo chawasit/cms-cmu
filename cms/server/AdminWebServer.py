@@ -1712,6 +1712,9 @@ class UserViewHandler(BaseHandler):
             self.get_bool(attrs, "hidden")
             self.get_string(attrs, "primary_statements")
 
+            self.get_string(attrs, "contest_group")
+            self.get_bool(attrs, "rpg")
+
             # Update the user.
             user.set_attrs(attrs)
 
@@ -1752,6 +1755,9 @@ class AddUserHandler(SimpleContestHandler("add_user.html")):
 
             self.get_bool(attrs, "hidden")
             self.get_string(attrs, "primary_statements")
+
+            self.get_string(attrs, "contest_group")
+            self.get_bool(attrs, "rpg")
 
             # Create the user.
             attrs["contest"] = self.contest

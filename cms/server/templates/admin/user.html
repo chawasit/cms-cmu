@@ -48,7 +48,6 @@ function update_additional_answer(element, invoker)
         <th>Status</th>
         <th>Files</th>
         <th>Token</th>
-        <th>Comment</th>
         <th>Reevaluate</th>
       </tr>
     </thead>
@@ -134,9 +133,6 @@ function update_additional_answer(element, invoker)
           {% end %}
         </td>
         <td>
-          {{ s.short_comment }}
-        </td>
-        <td>
           {% set reevaluation_par_name = "submission" %}
           {% set reevaluation_par_value = s.id %}
           {% set reevaluation_par_dataset_id = None %}
@@ -211,6 +207,14 @@ function update_additional_answer(element, invoker)
       <tr>
         <td>Primary statements (JSON-encoded dict whose keys are task names and whose values are lists of language codes)</td>
         <td><input type="text" name="primary_statements" value="{{ selected_user.primary_statements }}"></td>
+      </tr>
+      <tr>
+        <td>RPG Mode?</td>
+        <td><input type="checkbox" name="rpg" {% if selected_user.rpg %}checked{% end %}/></td>
+      </tr>
+      <tr>
+        <td>Contest Group ("all" for all contest OR list of contest's id"1,2,3")</td>
+        <td><input type="text" name="contest_group" value="{{ selected_user.contest_group }}"></td>
       </tr>
     </table>
     <input type="submit" value="Update" />
