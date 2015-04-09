@@ -692,6 +692,7 @@ class FileCacher(object):
                 pass
             else:
                 dst.write('\n')
+                hasher.update('\n')
 
             digest = hasher.hexdigest().decode("ascii")
             dst.flush()

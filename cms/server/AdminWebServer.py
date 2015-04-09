@@ -1446,7 +1446,10 @@ class AddTaskHandler(BaseHandler):
             self.get_string(attrs, "score_mode")
 
             # Create the task.
-            attrs["num"] = len(self.contest.tasks)
+            num = 0;
+            for task in self.contest.tasks:
+                num = max( task.num, num)
+            attrs["num"] = num+1
             attrs["contest"] = self.contest
             task = Task(**attrs)
             self.sql_session.add(task)
@@ -1986,6 +1989,14 @@ class NotificationsHandler(BaseHandler):
 
         self.write(json.dumps(res))
 
+class NeoRankingHandler(BaseHandler):
+    """Shows the ranking for a contest.
+
+    """
+    def get(self):
+        self.contest = Contest.get_from_id(1,self.sql_session)
+        self.r_params = self.render_params()
+        self.render("neo_ranking.html", **self.r_params)
 
 _aws_handlers = [
     (r"/", MainHandler),
@@ -2032,4 +2043,5 @@ _aws_handlers = [
     (r"/resources/([0-9]+|all)", ResourcesHandler),
     (r"/resources/([0-9]+|all)/([0-9]+)", ResourcesHandler),
     (r"/notifications", NotificationsHandler),
+    (r"/neoranking", NeoRankingHandler),
 ]

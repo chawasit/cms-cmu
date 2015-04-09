@@ -119,7 +119,8 @@ class User(Base):
         Contest,
         backref=backref("users",
                         cascade="all, delete-orphan",
-                        passive_deletes=True))
+                        passive_deletes=True,
+                        uselist=True))
 
     # A JSON-encoded dictionary of lists of strings: statements["a"]
     # contains the language codes of the statements that will be

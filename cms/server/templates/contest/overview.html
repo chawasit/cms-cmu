@@ -89,13 +89,12 @@
 	<h4>Total Score: <b>{{ total_score }}</b></h4>
 	{% if current_user.rpg is True %}
 	<p>
-	{% set disabled = False %}
+	{% set disabled = not (next_level==len(contest.tasks)) %}
 	{% if current_user.contest_group == "all" %}
-		{% set disabled = True if current_user.contest_level>=len( sql_session.query(Contest).all() ) else False %}
+		{% set disabled = True if current_user.contest_level>=len( sql_session.query(Contest).all() ) else disabled %}
 	{% else %}
-		{% set disabled = True if current_user.contest_level>=len( current_user.contest_group.split(",") ) else False %}
+		{% set disabled = True if current_user.contest_level>=len( current_user.contest_group.split(",") ) else disabled %}
 	{% end %}
-	{% set disabled = disabled and (next_level==len(contest.tasks)) %}
 	  <a href="/nextlevel" class="btn btn-primary btn-lg {% if disabled is True %}disabled{% end %}" role="button">Next Level</a>
 	</p>
 	{% end %}

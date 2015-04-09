@@ -153,9 +153,10 @@ class BaseHandler(CommonRequestHandler):
         self.set_header("Cache-Control", "no-cache, must-revalidate")
 
         self.sql_session = Session()
-        self.user_contest = Contest.get_from_id(self.application.service.contest,
+        # self.user_contest = Contest.get_from_id(self.application.service.contest,
+                                        # self.sql_session)
+        self.user_contest = Contest.get_from_id(1,
                                         self.sql_session)
-
         user = self.get_current_user()
         contest_id = 1
         if self.get_secure_cookie("contest") is not None:
