@@ -42,10 +42,10 @@
 
     {% if score_type is not None and score_type.max_public_score != 0 %}
     <td class="public_score {{ get_score_class(sr.public_score, score_type.max_public_score) }}">
-            {{ "%g" % round(sr.public_score, task.score_precision) }} / {{ "%g" % round(score_type.max_public_score, task.score_precision) }}
+        {{ "%g" % round(sr.public_score, task.score_precision) }} / {{ "%g" % round(score_type.max_public_score, task.score_precision) }}
     </td>
     {% end %}
-	
+
 {% end %}
     <td class="files">
         {% comment We replace '%l' with the actual language only when it occurs as an extension at the end of the string and only when %}

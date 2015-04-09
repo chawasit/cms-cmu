@@ -93,6 +93,10 @@ class User(Base):
         Boolean,
         nullable=False,
         default=False)
+    contest_level = Column(
+        Integer,
+        nullable=False,
+        default="1")
     contest_group = Column(
         Unicode,
         nullable=False,

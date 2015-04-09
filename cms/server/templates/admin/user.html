@@ -213,6 +213,10 @@ function update_additional_answer(element, invoker)
         <td><input type="checkbox" name="rpg" {% if selected_user.rpg %}checked{% end %}/></td>
       </tr>
       <tr>
+        <td>RPG Mode current level</td>
+        <td><input type="text" name="contest_level" value="{{ selected_user.contest_level }}"></td>
+      </tr>
+      <tr>
         <td>Contest Group ("all" for all contest OR list of contest's id"1,2,3")</td>
         <td><input type="text" name="contest_group" value="{{ selected_user.contest_group }}"></td>
       </tr>

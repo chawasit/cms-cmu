@@ -34,6 +34,7 @@
 		<tbody>
 	{% set extensions = "[%s]" %  ("|".join(LANGUAGE_TO_SOURCE_EXT_MAP[lang][1:] for lang in contest.languages)) %}
 	{% set total_score = 0 %}
+	{% set next_level = 0 %}
 	{% for t_iter in contest.tasks %}
 			<tr onclick="window.document.location='{{ url_root }}/tasks/{{ encode_for_url(t_iter.name) }}/description'">
 				<td><a href="{{ url_root }}/tasks/{{ encode_for_url(t_iter.name) }}/description">{{ t_iter.name }}</a></td>
@@ -52,6 +53,9 @@
 			            {% break %}
 			        {% end %}
 			        {% include submission_column.html %}
+			        {% if sr.public_score==score_type.max_public_score %}
+			            {% set next_level = next_level+1 %}
+			        {% end %}
 			        {% set sr = None %}
 			    {% else %}
 			    	<td></td>
@@ -83,6 +87,18 @@
 	</table>
 
 	<h4>Total Score: <b>{{ total_score }}</b></h4>
+	{% if current_user.rpg is True %}
+	<p>
+	{% set disabled = False %}
+	{% if current_user.contest_group == "all" %}
+		{% set disabled = True if current_user.contest_level>=len( sql_session.query(Contest).all() ) else False %}
+	{% else %}
+		{% set disabled = True if current_user.contest_level>=len( current_user.contest_group.split(",") ) else False %}
+	{% end %}
+	{% set disabled = disabled and (next_level==len(contest.tasks)) %}
+	  <a href="/nextlevel" class="btn btn-primary btn-lg {% if disabled is True %}disabled{% end %}" role="button">Next Level</a>
+	</p>
+	{% end %}
 </div>
 
 {% end %}

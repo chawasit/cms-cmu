@@ -68,7 +68,7 @@ from werkzeug.datastructures import LanguageAccept
 from cms import SOURCE_EXT_TO_LANGUAGE_MAP, ConfigError, config, ServiceCoord
 from cms.io import WebService
 from cms.db import Session, Contest, User, Task, Question, Submission, Token, \
-    File, UserTest, UserTestFile, UserTestManager, PrintJob
+    File, UserTest, UserTestFile, UserTestManager, PrintJob, is_contest_id
 from cms.db.filecacher import FileCacher
 from cms.grading.tasktypes import get_task_type
 from cms.grading.scoretypes import get_score_type
@@ -83,9 +83,7 @@ from cmscommon.datetime import make_datetime, make_timestamp, get_timezone
 from cmscommon.mimetypes import get_type_for_file_name
 from cmscommon.archive import Archive
 
-
 logger = logging.getLogger(__name__)
-
 
 def check_ip(client, wanted):
     """Return if client IP belongs to the wanted subnet.
@@ -105,7 +103,9 @@ def check_ip(client, wanted):
     return (wanted & snmask) == (client & snmask)
 
 
-def allow_contest(user, contest_id):
+def get_contest_id(user, contest_id):
+    if user is None:
+        return 1
     group = user.contest_group
     if user.rpg == False:
         if group == "all":
@@ -117,8 +117,19 @@ def allow_contest(user, contest_id):
             else:
                 return contests[0]
     else:
-        # In Development
-        pass
+        # contest_id = user.contest_level
+        if group == "all":
+            # if is_contest_id(user.contest_level):
+            #     return user.contest_level
+            # else:
+            #     return user.contest_level-1
+            return user.contest_level
+        else:
+            contests = group.split(",")
+            # if len(contests)<=contest_id:
+            #     return contests[ len(contests)-1 ]
+            # return contests[contest_id-1]
+            return contests[ user.contest_level-1 ]
 
 class BaseHandler(CommonRequestHandler):
     """Base RequestHandler for this application.
@@ -145,20 +156,18 @@ class BaseHandler(CommonRequestHandler):
         self.user_contest = Contest.get_from_id(self.application.service.contest,
                                         self.sql_session)
 
-        from cms.db import is_contest_id
         user = self.get_current_user()
         contest_id = 1
         if self.get_secure_cookie("contest") is not None:
             # Parse cookie.
             try:
                 cookie = pickle.loads(self.get_secure_cookie("contest"))
-                contest_id = allow_contest(user, cookie[0])
+                contest_id = get_contest_id(user, cookie[0])
             except:
                 self.clear_cookie("contest")
-                contest_id = allow_contest(user, 1)
+                contest_id = get_contest_id(user, 1)
         else:
-            contest_id = allow_contest(user, 1)
-
+            contest_id = get_contest_id(user, 1)
 
         self.contest = Contest.get_from_id( contest_id,
                                         self.sql_session)
@@ -521,12 +530,11 @@ class ChangeContestHandler(BaseHandler):
 
     """
     def get(self, contest_id):
-        from cms.db import is_contest_id
         self.clear_cookie("contest")
         user = self.get_current_user()
 
         if is_contest_id(contest_id):
-            contest_id = allow_contest(user, contest_id)
+            contest_id = get_contest_id(user, contest_id)
             self.set_secure_cookie("contest",
                                        pickle.dumps((contest_id,
                                                      make_timestamp())),
@@ -539,6 +547,52 @@ class ChangeContestHandler(BaseHandler):
 
         self.redirect("/")
 
+class NextContestHandler(BaseHandler):
+    """Next Contest ID
+
+    """
+    def get(self):
+        user = self.get_current_user()
+        next_level = user.contest_level + 1
+        if user.contest_group == "all":
+            max_contest = len( self.sql_session.query(Contest).all() )
+        else:
+            max_contest = len(user.contest_group.split(","))
+        if next_level>max_contest:
+            next_level = max_contest
+
+        count = 0
+        for t_iter in self.contest.tasks:
+            task = self.contest.get_task( t_iter.name )
+            submissions = self.sql_session.query(Submission).filter(Submission.user == user).filter(Submission.task == task).all()
+            if len(submissions)>0:
+                for s_idx, s in enumerate(sorted(submissions, key=lambda s: s.timestamp, reverse=True)):
+                    try:
+                        score_type = get_score_type(dataset=task.active_dataset)
+                    except:
+                        score_type = None
+                    sr = s.get_result(s.task.active_dataset)
+                    break
+                if score_type is not None and score_type.max_public_score != 0:
+                    if sr.public_score==score_type.max_public_score:
+                        count = count+1
+                sr = None
+        print("Count "+str(count))
+        if count == len(self.contest.tasks):
+
+            attrs = {"contest_level": next_level}
+            user.set_attrs(attrs)
+
+            self.sql_session.commit()
+
+            self.clear_cookie("contest")
+            contest_id = get_contest_id(user, next_level)
+            print("get Contest id "+str(contest_id))
+            self.set_secure_cookie("contest",
+                                   pickle.dumps((contest_id,
+                                                 make_timestamp())),
+                                   expires_days=None)
+        self.redirect("/")
 
 class MainHandler(BaseHandler):
     """Home page handler.
@@ -624,6 +678,7 @@ class LogoutHandler(BaseHandler):
     """
     def get(self):
         self.clear_cookie("login")
+        self.clear_cookie("contest")
         self.redirect("/")
 
 
@@ -2110,4 +2165,5 @@ _cws_handlers = [
     (r"/printing", PrintingHandler),
     (r"/stl/(.*)", StaticFileGzHandler, {"path": config.stl_path}),
     (r"/contest/([1-9][0-9]*)", ChangeContestHandler),
+    (r"/nextlevel", NextContestHandler),
 ]
