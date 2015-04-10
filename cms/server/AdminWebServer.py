@@ -40,6 +40,7 @@ import traceback
 from datetime import datetime, timedelta
 from StringIO import StringIO
 import zipfile
+import pickle
 
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
@@ -1989,14 +1990,43 @@ class NotificationsHandler(BaseHandler):
 
         self.write(json.dumps(res))
 
-class NeoRankingHandler(BaseHandler):
+class OverviewRankingHandler(BaseHandler):
     """Shows the ranking for a contest.
 
     """
     def get(self):
+        contest_select = []
+        user_select = []
+        if self.get_secure_cookie("ranking") is not None:
+            try:
+                cookie = pickle.loads(self.get_secure_cookie("ranking"))
+                user_select = cookie[0]
+                contest_select = cookie[1]
+            except:
+                self.clear_cookie("ranking")
+
+        if not user_select:
+            user_select = [user.id for user in Contest.get_from_id(1,self.sql_session).users]
+        if not contest_select:
+            contest_select = [contest.id for contest in self.sql_session.query(Contest).all()]
+
         self.contest = Contest.get_from_id(1,self.sql_session)
         self.r_params = self.render_params()
-        self.render("neo_ranking.html", **self.r_params)
+        logger.info("Render Ranking Overview user:%s contest:%s", str(user_select), str(contest_select))
+        self.render("overview_ranking.html", contest_select=contest_select, user_select=user_select, **self.r_params)
+
+    def post(self):
+        self.clear_cookie("ranking")
+
+        contest_select = self.get_arguments("contest", strip=True)
+        user_select = self.get_arguments("user", strip=True)
+
+        self.set_secure_cookie("ranking",
+                                   pickle.dumps((user_select,
+                                                 contest_select)),
+                                   expires_days=None)
+
+        self.redirect("/overview_ranking")
 
 _aws_handlers = [
     (r"/", MainHandler),
@@ -2043,5 +2073,5 @@ _aws_handlers = [
     (r"/resources/([0-9]+|all)", ResourcesHandler),
     (r"/resources/([0-9]+|all)/([0-9]+)", ResourcesHandler),
     (r"/notifications", NotificationsHandler),
-    (r"/neoranking", NeoRankingHandler),
+    (r"/overview_ranking", OverviewRankingHandler),
 ]

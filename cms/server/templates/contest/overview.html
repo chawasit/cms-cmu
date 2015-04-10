@@ -53,9 +53,11 @@
 			            {% break %}
 			        {% end %}
 			        {% include submission_column.html %}
-			        {% if sr.public_score==score_type.max_public_score %}
-			            {% set next_level = next_level+1 %}
-			        {% end %}
+			        {% if sr is not None and score_type is not None %}
+				        {% if sr.public_score==score_type.max_public_score %}
+				            {% set next_level = next_level+1 %}
+				        {% end %}
+				    {% end %}
 			        {% set sr = None %}
 			    {% else %}
 			    	<td></td>

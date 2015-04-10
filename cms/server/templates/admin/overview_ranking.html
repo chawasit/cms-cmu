@@ -1,0 +1,203 @@
+{% import re %}
+{% import time %}
+{% import json %}
+{% from cms import LANGUAGE_NAMES, LANGUAGE_TO_SOURCE_EXT_MAP %}
+{% from cms.server import format_amount_of_time, format_time, format_datetime, format_datetime_smart, get_score_class, encode_for_url %}
+{% from cmscommon.datetime import make_timestamp, utc %}
+{% from cmscommon.isocodes import translate_language_country_code %}
+{% from cms.grading import task_score %}
+{% from cms.db import Session, Contest, User, Task, Submission %}
+{% set sql_session = Session() %}
+{% set contest_list = sorted(sql_session.query(Contest).all(), key=lambda c: c.id) %}
+{% set user_list = sorted(contest.users, key=lambda u: u.id) %}
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="text/javascript"></script>
+    <link rel="shortcut icon" href="./static/favicon.ico">
+    <script type="text/javascript" src="./static/jq/jquery-1.11.2.min.js"></script>
+    <script type="text/javascript" src="./static/js/bootstrap.js"></script>
+    <script type="text/javascript" src="./static/js/bootstrap-sortable.js"></script>
+    <script type="text/javascript" src="./static/cws_utils.js"></script>
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+    <link rel="stylesheet" href="./static/css/bootstrap-sortable.css">
+    <link href="./static/css/cosmo.css" rel="stylesheet" title="main">
+    <link rel="stylesheet" href="./static/cws_style.css">
+    <title>Ranking</title>
+    <script type="text/javascript">
+        $(function () {
+          $('[data-toggle="tooltip"]').tooltip()
+        })
+        $(document).ready(function() {
+            $('#allUser').click(function(event) {
+                if(this.checked) {
+                    $('.user').each(function() {
+                        this.checked = true;
+                    });
+                }else{
+                    $('.user').each(function() {
+                        this.checked = false;
+                    });
+                }
+            });
+            $('#allContest').click(function(event) {
+                if(this.checked) {
+                    $('.contest').each(function() {
+                     this.checked = true;
+                    });
+                }else{
+                    $('.contest').each(function() {
+                        this.checked = false;
+                    });
+                }
+            });
+        });
+    </script>
+</head>
+<body id="body">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="./">Administrator Control Panel</a>
+            </div>
+            <ul class="nav navbar-nav">
+            </ul>
+            <div class="navbar-right">
+                <ul class="nav navbar-nav">
+                <li>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#selectModal">
+                    SETTING
+                    </button>
+                </li>
+            </ul>
+            </div>
+        </div>
+    </nav>
+    <div id="main" class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="page-header">
+                    <h1>Ranking <small>overview</small></h1>
+                </div>
+                <div class="table-responsive">
+                    <table id="submission_list" class="table table-bordered table-striped table-hover sortable">
+                        <thead>
+                            <tr>
+                                <th style="vertical-align: middle;" rowspan="2" class="az" data-defaultsign="nospan" data-defaultsort="asc" data-toggle="tooltip" data-placement="top" title="Name" data-container="body">Name</th>
+                        {% for c_iter in contest_list %}
+                        {% if str(c_iter.id) in contest_select %}
+                                <th style="text-align: center;" colspan="{{ len(c_iter.tasks)+1 }}" data-mainsort="{{ len(c_iter.tasks)+1 }}" data-toggle="tooltip" data-placement="top" title="Contest - {{ c_iter.name }}" data-container="body">{{ c_iter.name }}</th>
+                        {% end %}
+                        {% end %}
+                                <th style="vertical-align: middle; text-align: center;" rowspan="2" data-toggle="tooltip" data-placement="top" title="Global Score" data-container="body">Global</th>
+                            </tr>
+                            <tr>
+                        {% for c_iter in contest_list %}
+                        {% if str(c_iter.id) in contest_select %}
+                            {% for task in c_iter.tasks %}
+                                <th style="text-align: center;" data-toggle="tooltip" data-placement="top" title="{{ c_iter.name }} - {{ task.name }}" data-container="body">{{ task.name }}</th>
+                            {% end %}
+                            <th style="text-align: center;" data-toggle="tooltip" data-placement="top" title="{{ c_iter.name }} - Total Score" data-container="body">Total</th>
+                        {% end %}
+                        {% end %}
+                            </th>
+                        </thead>
+                        <tbody>
+                        {% for user in user_list %}
+                            {% if not user.hidden %}
+                                {% if str(user.id) in user_select %}
+                                    {% set total_score = 0.0 %}
+                                    <tr>
+                                    <td><a href="{{ url_root }}/user/{{ user.id }}">{{ "%s %s" % (user.first_name, user.last_name) }}</a></td>
+                                    {% for c_iter in contest_list %}
+                                        {% if str(c_iter.id) in contest_select %}
+                                            {% set score = 0.0 %}
+                                            {% set partial = False %}
+                                            {% for task in c_iter.tasks %}
+                                                {% set t_score, t_partial = task_score(user, task) %}
+                                                {% set t_score = round(t_score, task.score_precision) %}
+                                                {% set score += t_score %}
+                                                {% set total_score += t_score %}
+                                                {% set partial = partial or t_partial %}
+                                                <td style="text-align: center;">{{ t_score }}{% if t_partial %}*{% end %}</td>
+                                            {% end %}
+                                            <td style="text-align: center;">{{ round(score, c_iter.score_precision) }}{% if partial %}*{% end %}</td>
+                                        {% end %}
+                                    {% end %}
+                                    <td style="text-align: center;" data-toggle="tooltip" data-placement="right" title="{{ user.first_name }} - Total Score" data-container="body">{{ total_score }}</td>
+                                    </tr>
+                                {% end %}
+                            {% end %}
+                        {% end %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <footer class="footer">
+            <span>Department of Computer Science, Chiang Mai University</span>
+            <span id="server_time" class="pull-right"></span>
+        </footer>
+    </div>
+
+    <div class="modal fade" id="selectModal" tabindex="-1" role="dialog" aria-labelledby="select" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="Selector">Ranking Setting</h4>
+                </div>
+                <form enctype="multipart/form-data" action="{{ url_root }}/overview_ranking" method="POST">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 col-lg-6">
+                                <div class="form-group">
+                                    <label>Users</label>
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" id="allUser"> Select All
+                                        </label>
+                                    </div>
+                                    {% for user in user_list %}
+                                    {% if not user.hidden %}
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" class="user" name="user" value="{{ user.id }}" {% if str(user.id) in user_select %}checked="checked"{% end %}>({{ user.id }}) {{ user.first_name }} {{ user.last_name }}
+                                        </label>
+                                    </div>
+                                    {% end %}
+                                    {% end %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-6">
+                                <div class="form-group">
+                                    <label>Contests</label>
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" id="allContest"> Select All
+                                        </label>
+                                    </div>
+                                    {% for c_iter in contest_list %}
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" class="contest" name="contest" value="{{ c_iter.id }}" {% if str(c_iter.id) in contest_select %}checked="checked"{% end %}>({{ c_iter.id }}) {{ c_iter.name }}
+                                        </label>
+                                    </div>
+                                    {% end %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">SAVE</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
