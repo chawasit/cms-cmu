@@ -89,16 +89,39 @@
 	</table>
 
 	<h4>Total Score: <b>{{ total_score }}</b></h4>
+	<div class="progress">
+		{% set progress = next_level*100/len(contest.tasks) %}
+		{% set progress_class = "" %}
+		{% if progress >= 100 %}
+			{% set progress_class = "progress-bar-success" %}
+		{% elif progress >= 65 %}
+			{% set progress_class = "" %}
+		{% elif progress >= 45 %}
+			{% set progress_class = "progress-bar-warning" %}
+		{% else %}
+			{% set progress_class = "progress-bar-danger" %}
+		{% end %}
+		<div class="progress-bar progress-bar-striped active {{ progress_class }}" role="progressbar" aria-valuenow="{{next_level}}" aria-valuemin="0" aria-valuemax="{{len(contest.tasks)}}" style="width: {{ progress }}%;">
+			{{ progress }}%
+		</div>
+	</div>
 	{% if current_user.rpg is True %}
-	<p>
-	{% set disabled = not (next_level==len(contest.tasks)) %}
-	{% if current_user.contest_group == "all" %}
-		{% set disabled = True if current_user.contest_level>=len( sql_session.query(Contest).all() ) else disabled %}
-	{% else %}
-		{% set disabled = True if current_user.contest_level>=len( current_user.contest_group.split(",") ) else disabled %}
-	{% end %}
-	  <a href="/nextlevel" class="btn btn-primary btn-lg {% if disabled is True %}disabled{% end %}" role="button">Next Level</a>
-	</p>
+	{% set user_pass = (next_level==len(contest.tasks)) %}
+		{% if user_pass %}
+			{% set max_level = False %}
+			{% if current_user.contest_group == "all" %}
+				{% set max_level = current_user.contest_level>=len( sql_session.query(Contest).all() ) %}
+			{% else %}
+				{% set max_level = current_user.contest_level>=len( current_user.contest_group.split(",") ) %}
+			{% end %}
+			{% if max_level %}
+			<a href="#" class="btn btn-primary btn-lg disabled" role="button">Max Level</a>
+			{% else %}
+			<a href="/nextlevel" class="btn btn-primary btn-lg" role="button">Next Level</a>
+			{% end %}
+		{% else %}
+			<a href="#" class="btn btn-primary btn-lg disabled" role="button">Next Level</a>
+		{% end %}
 	{% end %}
 </div>
 

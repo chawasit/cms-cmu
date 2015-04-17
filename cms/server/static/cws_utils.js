@@ -92,7 +92,7 @@ CMS.CWSUtils.prototype.display_notification = function(
         alert.addClass("alert-error");
     } else if (level == "success") {
         alert.addClass("alert-success");
-    }
+    } else alert.addClass("alert-info");
 
     $("#notifications").prepend(alert);
 };

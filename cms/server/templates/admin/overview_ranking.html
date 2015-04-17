@@ -17,16 +17,16 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="text/javascript"></script>
-    <link rel="shortcut icon" href="./static/favicon.ico">
-    <script type="text/javascript" src="./static/jq/jquery-1.11.2.min.js"></script>
-    <script type="text/javascript" src="./static/js/bootstrap.js"></script>
-    <script type="text/javascript" src="./static/js/bootstrap-sortable.js"></script>
-    <script type="text/javascript" src="./static/cws_utils.js"></script>
-    <link rel="stylesheet" href="./static/css/bootstrap.css">
-    <link rel="stylesheet" href="./static/css/bootstrap-sortable.css">
-    <link href="./static/css/cosmo.css" rel="stylesheet" title="main">
-    <link rel="stylesheet" href="./static/cws_style.css">
-    <title>Ranking</title>
+    <link rel="shortcut icon" href="{{ url_root }}/static/favicon.ico" />
+    <script type="text/javascript" src="{{ url_root }}/static/jq/jquery-1.11.2.min.js"></script>
+    <script type="text/javascript" src="{{ url_root }}/static/js/bootstrap.js"></script>
+    <script type="text/javascript" src="{{ url_root }}/static/js/bootstrap-sortable.js"></script>
+    <script type="text/javascript" src="{{ url_root }}/static/cws_utils.js"></script>
+    <link rel="stylesheet" href="{{ url_root }}/static/css/cosmo.css">
+    <link rel="stylesheet" href="{{ url_root }}/static/css/bootstrap-sortable.css">
+    <link rel="stylesheet" href="{{ url_root }}/static/css/font-awesome.css">
+    <link rel="stylesheet" href="{{ url_root }}/static/cws_style.css">
+    <title>Ranking Overview</title>
     <script type="text/javascript">
         $(function () {
           $('[data-toggle="tooltip"]').tooltip()
@@ -61,18 +61,25 @@
     <nav class="navbar navbar-inverse navbar-fixed-top">
         <div class="container">
             <div class="navbar-header">
-                <a class="navbar-brand" href="./">Administrator Control Panel</a>
+                <a class="navbar-brand" href="./">A<small>dministrator</small> M<small>anagement</small> S<small>ystem</a>
             </div>
             <ul class="nav navbar-nav">
+                <li class="dropdown" id="theme-dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-cogs icon-large"></i> Download<b class="caret"></b></a>
+                  <ul class="dropdown-menu">
+                    <li><a href="{{ url_root }}/overview_ranking/csv">csv</a></li>
+                    <li><a href="{{ url_root }}/overview_ranking/txt">text</a></li>
+                  </ul>
+                </li>
             </ul>
             <div class="navbar-right">
                 <ul class="nav navbar-nav">
-                <li>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#selectModal">
-                    SETTING
-                    </button>
-                </li>
-            </ul>
+                    <li>
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#selectModal">
+                        SETTING
+                        </button>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
@@ -86,13 +93,13 @@
                     <table id="submission_list" class="table table-bordered table-striped table-hover sortable">
                         <thead>
                             <tr>
-                                <th style="vertical-align: middle;" rowspan="2" class="az" data-defaultsign="nospan" data-defaultsort="asc" data-toggle="tooltip" data-placement="top" title="Name" data-container="body">Name</th>
+                                <th style="vertical-align: middle;" rowspan="2" class="az" data-defaultsign="nospan"  data-toggle="tooltip" data-placement="top" title="Name" data-container="body"><i class="fa fa-user fa-fw"></i>Name</th>
                         {% for c_iter in contest_list %}
                         {% if str(c_iter.id) in contest_select %}
                                 <th style="text-align: center;" colspan="{{ len(c_iter.tasks)+1 }}" data-mainsort="{{ len(c_iter.tasks)+1 }}" data-toggle="tooltip" data-placement="top" title="Contest - {{ c_iter.name }}" data-container="body">{{ c_iter.name }}</th>
                         {% end %}
                         {% end %}
-                                <th style="vertical-align: middle; text-align: center;" rowspan="2" data-toggle="tooltip" data-placement="top" title="Global Score" data-container="body">Global</th>
+                                <th data-defaultsort="desc" style="vertical-align: middle; text-align: center;" rowspan="2" data-toggle="tooltip" data-placement="top" title="Global Score" data-container="body">Global</th>
                             </tr>
                             <tr>
                         {% for c_iter in contest_list %}
@@ -165,7 +172,7 @@
                                     {% if not user.hidden %}
                                     <div class="checkbox">
                                         <label>
-                                            <input type="checkbox" class="user" name="user" value="{{ user.id }}" {% if str(user.id) in user_select %}checked="checked"{% end %}>({{ user.id }}) {{ user.first_name }} {{ user.last_name }}
+                                            <input type="checkbox" class="user" name="user" value="{{ user.id }}" {% if str(user.id) in user_select %}checked{% end %}>({{ user.id }}) {{ user.first_name }} {{ user.last_name }}
                                         </label>
                                     </div>
                                     {% end %}
@@ -183,7 +190,7 @@
                                     {% for c_iter in contest_list %}
                                     <div class="checkbox">
                                         <label>
-                                            <input type="checkbox" class="contest" name="contest" value="{{ c_iter.id }}" {% if str(c_iter.id) in contest_select %}checked="checked"{% end %}>({{ c_iter.id }}) {{ c_iter.name }}
+                                            <input type="checkbox" class="contest" name="contest" value="{{ c_iter.id }}" {% if str(c_iter.id) in contest_select %}checked{% end %}>({{ c_iter.id }}) {{ c_iter.name }}
                                         </label>
                                     </div>
                                     {% end %}

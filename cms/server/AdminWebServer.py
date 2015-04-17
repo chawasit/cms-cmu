@@ -1994,7 +1994,7 @@ class OverviewRankingHandler(BaseHandler):
     """Shows the ranking for a contest.
 
     """
-    def get(self):
+    def get(self, format="online"):
         contest_select = []
         user_select = []
         if self.get_secure_cookie("ranking") is not None:
@@ -2006,14 +2006,28 @@ class OverviewRankingHandler(BaseHandler):
                 self.clear_cookie("ranking")
 
         if not user_select:
-            user_select = [user.id for user in Contest.get_from_id(1,self.sql_session).users]
+            user_select = [str(user.id) for user in Contest.get_from_id(1,self.sql_session).users]
         if not contest_select:
-            contest_select = [contest.id for contest in self.sql_session.query(Contest).all()]
+            contest_select = [str(contest.id) for contest in self.sql_session.query(Contest).all()]
 
         self.contest = Contest.get_from_id(1,self.sql_session)
         self.r_params = self.render_params()
         logger.info("Render Ranking Overview user:%s contest:%s", str(user_select), str(contest_select))
-        self.render("overview_ranking.html", contest_select=contest_select, user_select=user_select, **self.r_params)
+
+        # self.render("overview_ranking.html", contest_select=contest_select, user_select=user_select, **self.r_params)
+
+        if format == "txt":
+            self.set_header("Content-Type", "text/plain")
+            self.set_header("Content-Disposition",
+                            "attachment; filename=\"ranking.txt\"")
+            self.render("overview_ranking.txt", contest_select=contest_select, user_select=user_select, **self.r_params)
+        elif format == "csv":
+            self.set_header("Content-Type", "text/csv")
+            self.set_header("Content-Disposition",
+                            "attachment; filename=\"ranking.csv\"")
+            self.render("overview_ranking.csv", contest_select=contest_select, user_select=user_select, **self.r_params)
+        else:
+            self.render("overview_ranking.html", contest_select=contest_select, user_select=user_select, **self.r_params)
 
     def post(self):
         self.clear_cookie("ranking")
@@ -2074,4 +2088,5 @@ _aws_handlers = [
     (r"/resources/([0-9]+|all)/([0-9]+)", ResourcesHandler),
     (r"/notifications", NotificationsHandler),
     (r"/overview_ranking", OverviewRankingHandler),
+    (r"/overview_ranking/([a-z]+)", OverviewRankingHandler),
 ]

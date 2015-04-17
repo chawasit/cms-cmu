@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="{{ url_root }}/static/css/bootstrap-sortable.css">
 <link href="{{ url_root }}/static/css/bootstrap.css" rel="stylesheet" title="main">
 <link rel="stylesheet" href="{{ url_root }}/static/cws_style.css">
-<title>{{ contest.description }}</title>
+<title>CMU</title>
 {% if current_user is not None %}
 <script type="text/javascript">
 // FIXME use Date objects
@@ -89,16 +89,28 @@ $(document).ready(function () {
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				<a class="navbar-brand" href="{{ url_root }}/">CMS System</a>
+				<a class="navbar-brand" href="{{ url_root }}/">C<small>ontest</small> M<small>anagement</small> S<small>ystem</small></a>
 			</div>
 {% if current_user is not None %}
 			<ul class="nav navbar-nav">
 				<li{% if request.path == '/testing' %} class="active"{% end %}><a href="{{ url_root }}/testing">{{ _("Testing") }}</a></li>
 				<li><a href="{{ url_root }}/stl/index.html" target="_blank">{{ _("Documentation") }}</a></li>
+                {% set unread_count = handler.get_secure_cookie("unread_count") %}
+                <li{% if request.path == '/communication' %}{% set unread_count = 0 %} class="active"{% end %}>
+                    <a href="{{ url_root }}/communication">{{ _("Communication") }}
+                    {% if unread_count is None or int(unread_count) == 0 %}
+                        <span id="unread_count" class="label label-warning no_unread">{{ _("%d unread") % 0 }}</span>
+                    {% else %}
+                        <script>$(document).ready(function () { utils.unread_count = {{ int(unread_count) }};});</script>
+                        <span id="unread_count" class="label label-warning">{{ _("%d unread") % int(unread_count) }}</span>
+                    {% end %}
+                </a>
+                </li>
 				<li class="dropdown" id="theme-dropdown">
 				  <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-cogs icon-large"></i> Theme<b class="caret"></b></a>
 				  <ul class="dropdown-menu">
-				  	<li><a href="#" class="change-style-menu-item" rel="ken"><i class="icon-fixed-width icon-pencil"></i> Ken (Default)</a></li>
+            <li><a href="#" class="change-style-menu-item" rel="bootstrap"><i class="icon-fixed-width icon-pencil"></i> bootstrap (Default)</a></li>
+				  	<li><a href="#" class="change-style-menu-item" rel="ken"><i class="icon-fixed-width icon-pencil"></i> Ken </a></li>
 				    <li><a href="#" class="change-style-menu-item" rel="cyborg"><i class="icon-fixed-width icon-pencil"></i> Cyborg</a></li>
 				    <li><a href="#" class="change-style-menu-item" rel="cerulean"><i class="icon-fixed-width icon-pencil"></i> Cerulean</a></li>
 				    <li><a href="#" class="change-style-menu-item" rel="cosmo"><i class="icon-fixed-width icon-pencil"></i> Cosmo</a></li>
@@ -116,7 +128,7 @@ $(document).ready(function () {
                     {% from cms.db import Session, Contest %}
                     {% set sql_session = Session() %}
                     {% set allow_contests = current_user.contest_group.split(",") %}
-                    {% set contests_list = sql_session.query(Contest).all() %}
+                    {% set contests_list = sorted(sql_session.query(Contest).all(), key=lambda c: c.id) %}
                     {% for i, row in enumerate(contests_list) %}
                         {% set allow_contest = False %}
                         {% if current_user.contest_group == "all" or str(row.id) in allow_contests%}
@@ -191,7 +203,7 @@ $(document).ready(function () {
             </div>
         </div>
 		<footer class="footer">
-			<span>Edited by Department of Computer Science, Chiang Mai University</span>
+			<span>Department of Computer Science, Chiang Mai University</span>
 			<span id="server_time" class="pull-right"></span>
 		</footer>
 	</div>

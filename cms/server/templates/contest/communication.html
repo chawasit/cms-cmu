@@ -1,0 +1,155 @@
+{% extends base.html %}
+{% block core %}
+<div class="span9">
+
+{% from cms import config %}
+
+<div class="page-header">
+    <h1>{{ _("Communication") }}</h1>
+</div>
+
+{% if len (contest.announcements) > 0 %}
+<h2>{{ _("Announcements") }} <small>from {{ contest.name }}</small></h2>
+<div class="container">
+    {% for msg in reversed(contest.announcements) %}
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <h3 class="panel-title"><b>Subject: </b>
+                {% if msg.subject != '' %}
+                    {{ msg.subject }}
+                {% else %}
+                    {{ _("(no subject)") }}
+                {% end %}
+            </h3>
+        </div>
+
+        {% if msg.text != '' %}
+        <div class="panel-body">{% raw xhtml_escape(msg.text).replace('\n', '<br/>') %}</div>
+        {% end %}
+        <div class="panel-footer">
+            <span class="timestamp">{{ format_datetime_smart(msg.timestamp, timezone, locale=locale) }}</span>
+        </div>
+    </div>
+    {% end %}
+</div>
+{% end %}
+
+
+
+{% if config.allow_questions %}
+<h2>{{ _("Questions") }}</h2>
+<div class="container">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <form class="form-horizontal" action="{{ url_root }}/question" method="POST">
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="input_subject">{{ _("Subject") }}</label>
+                    <div class="col-sm-11">
+                        <input type="text" class="form-control" name="question_subject" id="input_subject"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="input_subject">{{ _("Text") }}</label>
+                    <div class="col-sm-11">
+                        <textarea class="form-control" name="question_text" rows="5"></textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-11">
+                        <div class="row">
+                            <button type="submit" class="btn btn-primary" type="submit">{{ _("Ask question") }}</button>
+                            <button type="reset" class="btn" type="submit">{{ _("Reset") }}</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+{% if len (current_user.questions) > 0 %}
+    {% for msg in reversed(current_user.questions) %}
+    {% if msg.reply_timestamp is not None %}
+    <div class="panel panel-success">
+    {% else %}
+    <div class="panel panel-default">
+    {% end %}
+        <div class="panel-heading">
+            <h3 class="panel-title"><b>Subject: </b>
+            {% if msg.subject != '' %}
+                {{ msg.subject }}
+            {% else %}
+                {{ _("(no subject)") }}
+            {% end %}
+            </h3>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Reply</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        {% if msg.text != '' %}
+                        {% raw xhtml_escape(msg.text).replace('\n', '<br/>') %}
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if msg.reply_timestamp is not None %}
+                            {% if msg.reply_subject != '' %}
+                                {{ msg.reply_subject }}
+                            {% elif msg.reply_text != '' %}
+                                {% raw xhtml_escape(msg.reply_text).replace('\n', '<br/>') %}
+                            {% end %}
+                        {% else %}
+                            {{ _("no answer yet") }}
+                        {% end %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="panel-footer">
+            <span class="timestamp">Asked: {{ format_datetime_smart(msg.question_timestamp, timezone, locale=locale) }}</span>
+            {% if msg.reply_timestamp is not None %}
+            <span class="timestamp">,Replied: {{ format_datetime_smart(msg.reply_timestamp, timezone, locale=locale) }}</span>
+            {% end %}
+        </div>
+    </div>
+    {% end %}
+{% end %}
+</div>
+{% end %}
+
+
+{% if len (current_user.messages) > 0 %}
+<h2>{{ _("Messages") }} <small>from Admin</small></h2>
+<div class="container">
+    {% for msg in reversed(current_user.messages) %}
+    <div class="panel panel-warning">
+        <div class="panel-heading">
+            <h3 class="panel-title"><b>Subject: </b>
+            {% if msg.subject != '' %}
+                {{ msg.subject }}
+            {% else %}
+                {{ _("(no subject)") }}
+            {% end %}
+            </h3>
+        </div>
+        {% if msg.text != '' %}
+        <div class="panel-body">{% raw xhtml_escape(msg.text).replace('\n', '<br/>') %}</div>
+        {% end %}
+        <div class="panel-footer">
+            <span class="timestamp">{{ format_datetime_smart(msg.timestamp, timezone, locale=locale) }}</span>
+        </div>
+    </div>
+    {% end %}
+</div>
+{% end %}
+
+
+</div>
+{% end %}
