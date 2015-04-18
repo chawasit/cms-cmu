@@ -1,16 +1,8 @@
-{% import re %}
-{% import time %}
-{% import json %}
-{% from cms import LANGUAGE_NAMES, LANGUAGE_TO_SOURCE_EXT_MAP %}
-{% from cms.server import format_amount_of_time, format_time, format_datetime, format_datetime_smart, get_score_class, encode_for_url %}
-{% from cmscommon.datetime import make_timestamp, utc %}
-{% from cmscommon.isocodes import translate_language_country_code %}
 {% from cms.grading import task_score %}
 {% from cms.db import Session, Contest, User, Task, Submission %}
 {% set sql_session = Session() %}
 {% set contest_list = sorted(sql_session.query(Contest).all(), key=lambda c: c.id) %}
 {% set user_list = sorted(contest.users, key=lambda u: u.id) %}
-
 <html>
 <head>
     <meta charset="utf-8">

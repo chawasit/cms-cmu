@@ -578,7 +578,7 @@ class NextContestHandler(BaseHandler):
                     if sr.public_score==score_type.max_public_score:
                         count = count+1
                 sr = None
-        print("Count "+str(count))
+
         if count == len(self.contest.tasks):
 
             attrs = {"contest_level": next_level}

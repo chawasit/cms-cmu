@@ -17,9 +17,9 @@
 <script type="text/javascript" src="{{ url_root }}/static/js/bootstrap.js"></script>
 <script type="text/javascript" src="{{ url_root }}/static/js/bootstrap-sortable.js"></script>
 <script type="text/javascript" src="{{ url_root }}/static/cws_utils.js"></script>
-<link rel="stylesheet" href="{{ url_root }}/static/css/bootstrap.css">
+<link rel="stylesheet" href="{{ url_root }}/static/css/cosmo.css">
+<link href="{{ url_root }}/static/css/cosmo.css" rel="stylesheet" title="main">
 <link rel="stylesheet" href="{{ url_root }}/static/css/bootstrap-sortable.css">
-<link href="{{ url_root }}/static/css/bootstrap.css" rel="stylesheet" title="main">
 <link rel="stylesheet" href="{{ url_root }}/static/cws_style.css">
 <title>CMU</title>
 {% if current_user is not None %}
@@ -92,65 +92,67 @@ $(document).ready(function () {
 				<a class="navbar-brand" href="{{ url_root }}/">C<small>ontest</small> M<small>anagement</small> S<small>ystem</small></a>
 			</div>
 {% if current_user is not None %}
-			<ul class="nav navbar-nav">
-				<li{% if request.path == '/testing' %} class="active"{% end %}><a href="{{ url_root }}/testing">{{ _("Testing") }}</a></li>
-				<li><a href="{{ url_root }}/stl/index.html" target="_blank">{{ _("Documentation") }}</a></li>
-                {% set unread_count = handler.get_secure_cookie("unread_count") %}
-                <li{% if request.path == '/communication' %}{% set unread_count = 0 %} class="active"{% end %}>
-                    <a href="{{ url_root }}/communication">{{ _("Communication") }}
-                    {% if unread_count is None or int(unread_count) == 0 %}
-                        <span id="unread_count" class="label label-warning no_unread">{{ _("%d unread") % 0 }}</span>
-                    {% else %}
-                        <script>$(document).ready(function () { utils.unread_count = {{ int(unread_count) }};});</script>
-                        <span id="unread_count" class="label label-warning">{{ _("%d unread") % int(unread_count) }}</span>
-                    {% end %}
-                </a>
-                </li>
-				<li class="dropdown" id="theme-dropdown">
-				  <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-cogs icon-large"></i> Theme<b class="caret"></b></a>
-				  <ul class="dropdown-menu">
-            <li><a href="#" class="change-style-menu-item" rel="bootstrap"><i class="icon-fixed-width icon-pencil"></i> bootstrap (Default)</a></li>
-				  	<li><a href="#" class="change-style-menu-item" rel="ken"><i class="icon-fixed-width icon-pencil"></i> Ken </a></li>
-				    <li><a href="#" class="change-style-menu-item" rel="cyborg"><i class="icon-fixed-width icon-pencil"></i> Cyborg</a></li>
-				    <li><a href="#" class="change-style-menu-item" rel="cerulean"><i class="icon-fixed-width icon-pencil"></i> Cerulean</a></li>
-				    <li><a href="#" class="change-style-menu-item" rel="cosmo"><i class="icon-fixed-width icon-pencil"></i> Cosmo</a></li>
-				    <li><a href="#" class="change-style-menu-item" rel="flatly"><i class="icon-fixed-width icon-pencil"></i> Flatly</a></li>
-				    <li><a href="#" class="change-style-menu-item" rel="journal"><i class="icon-fixed-width icon-pencil"></i> Journal</a></li>
-				    <li><a href="#" class="change-style-menu-item" rel="readable"><i class="icon-fixed-width icon-pencil"></i> Readable</a></li>
-				    <li><a href="#" class="change-style-menu-item" rel="slate"><i class="icon-fixed-width icon-pencil"></i> Slate</a></li>
-				    <li><a href="#" class="change-style-menu-item" rel="spacelab"><i class="icon-fixed-width icon-pencil"></i> Spacelab</a></li>
-				  </ul>
-				</li>
-                {% if current_user.rpg is False %}
-                <li class="dropdown" id="theme-dropdown">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-cogs icon-large"></i> Contest<b class="caret"></b></a>
-                  <ul class="dropdown-menu">
-                    {% from cms.db import Session, Contest %}
-                    {% set sql_session = Session() %}
-                    {% set allow_contests = current_user.contest_group.split(",") %}
-                    {% set contests_list = sorted(sql_session.query(Contest).all(), key=lambda c: c.id) %}
-                    {% for i, row in enumerate(contests_list) %}
-                        {% set allow_contest = False %}
-                        {% if current_user.contest_group == "all" or str(row.id) in allow_contests%}
-                            {% set allow_contest = True %}
-                        {% end %}
-                        {% if allow_contest %}
-                            <li><a href="/contest/{{row.id}}" ><i class="icon-fixed-width icon-pencil"></i> {{row.name}} </a></li>
-                        {% end %}
-                    {% end %}
-                  </ul>
-                </li>
-                {% end %}
-			</ul>
-			<div class="navbar-right">
-				<p class="navbar-text">
-					<span id="user-info">{% raw _("<strong>%(username)s - %(first_name)s %(last_name)s</strong>") % {"first_name": current_user.first_name, "last_name": current_user.last_name, "username": current_user.username} %}</span>
-					<span id="user-logout"><strong>(<a href="{{ url_root }}/logout">{{ _("Logout") }}</a>)</strong></span>
-				</p>
-			</div>
+      <div class="collapse navbar-collapse" id="navbar">
+  			<ul class="nav navbar-nav">
+  				<li{% if request.path == '/testing' %} class="active"{% end %}><a href="{{ url_root }}/testing">{{ _("Testing") }}</a></li>
+  				<li><a href="{{ url_root }}/stl/index.html" target="_blank">{{ _("Documentation") }}</a></li>
+                  {% set unread_count = handler.get_secure_cookie("unread_count") %}
+                  <li{% if request.path == '/communication' %}{% set unread_count = 0 %} class="active"{% end %}>
+                      <a href="{{ url_root }}/communication">{{ _("Communication") }}
+                      {% if unread_count is None or int(unread_count) == 0 %}
+                          <span id="unread_count" class="label label-warning no_unread">{{ _("%d unread") % 0 }}</span>
+                      {% else %}
+                          <script>$(document).ready(function () { utils.unread_count = {{ int(unread_count) }};});</script>
+                          <span id="unread_count" class="label label-warning">{{ _("%d unread") % int(unread_count) }}</span>
+                      {% end %}
+                  </a>
+                  </li>
+  				<li class="dropdown" id="theme-dropdown">
+  				  <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-cogs icon-large"></i> Theme<b class="caret"></b></a>
+  				  <ul class="dropdown-menu">
+              <li><a href="#" class="change-style-menu-item" rel="bootstrap"><i class="icon-fixed-width icon-pencil"></i> bootstrap</a></li>
+  				  	<li><a href="#" class="change-style-menu-item" rel="ken"><i class="icon-fixed-width icon-pencil"></i> Ken </a></li>
+  				    <li><a href="#" class="change-style-menu-item" rel="cyborg"><i class="icon-fixed-width icon-pencil"></i> Cyborg</a></li>
+  				    <li><a href="#" class="change-style-menu-item" rel="cerulean"><i class="icon-fixed-width icon-pencil"></i> Cerulean</a></li>
+  				    <li><a href="#" class="change-style-menu-item" rel="cosmo"><i class="icon-fixed-width icon-pencil"></i> Cosmo</a></li>
+  				    <li><a href="#" class="change-style-menu-item" rel="flatly"><i class="icon-fixed-width icon-pencil"></i> Flatly</a></li>
+  				    <li><a href="#" class="change-style-menu-item" rel="journal"><i class="icon-fixed-width icon-pencil"></i> Journal</a></li>
+  				    <li><a href="#" class="change-style-menu-item" rel="readable"><i class="icon-fixed-width icon-pencil"></i> Readable</a></li>
+  				    <li><a href="#" class="change-style-menu-item" rel="slate"><i class="icon-fixed-width icon-pencil"></i> Slate</a></li>
+  				    <li><a href="#" class="change-style-menu-item" rel="spacelab"><i class="icon-fixed-width icon-pencil"></i> Spacelab</a></li>
+  				  </ul>
+  				</li>
+                  {% if current_user.rpg is False %}
+                  <li class="dropdown" id="theme-dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-cogs icon-large"></i> Contest<b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                      {% from cms.db import Session, Contest %}
+                      {% set sql_session = Session() %}
+                      {% set allow_contests = current_user.contest_group.split(",") %}
+                      {% set contests_list = sorted(sql_session.query(Contest).all(), key=lambda c: c.id) %}
+                      {% for i, row in enumerate(contests_list) %}
+                          {% set allow_contest = False %}
+                          {% if current_user.contest_group == "all" or str(row.id) in allow_contests%}
+                              {% set allow_contest = True %}
+                          {% end %}
+                          {% if allow_contest %}
+                              <li><a href="/contest/{{row.id}}" ><i class="icon-fixed-width icon-pencil"></i> {{row.name}} </a></li>
+                          {% end %}
+                      {% end %}
+                    </ul>
+                  </li>
+                  {% end %}
+  			</ul>
+  			<div class="navbar-right">
+  				<p class="navbar-text">
+  					<span id="user-info">{% raw _("<strong>%(username)s - %(first_name)s %(last_name)s</strong>") % {"first_name": current_user.first_name, "last_name": current_user.last_name, "username": current_user.username} %}</span>
+  					<span id="user-logout"><strong>(<a href="{{ url_root }}/logout">{{ _("Logout") }}</a>)</strong></span>
+  				</p>
+  			</div>
+      </div>
 {% end %}
 		</div>
-    </nav>
+  </nav>
 
 {% if current_user is None %}
     {% if handler.get_argument("login_error", "") != "" %}
