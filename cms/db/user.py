@@ -41,7 +41,7 @@ from . import Base, Contest
 
 def generate_random_password():
     import random
-    chars = "abcdefghijklmnopqrstuvwxyz"
+    chars = "abcdefghijklmnopqrstuvwxyz1234567890!@#$%_"
     return "".join([random.choice(chars) for _ in xrange(6)])
 
 

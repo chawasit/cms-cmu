@@ -5,12 +5,18 @@
   <h1>Users list</h1>
 </div>
 <a href="{{ url_root }}/add_user/{{ contest.id }}">Add a new user</a>
+| <a href="{{ url_root }}/add_user_batch/{{ contest.id }}">Add a new batch user</a>
+<!-- | <a href="{{ url_root }}/export_user/{{ contest.id }}">Export user (CSV)</a> -->
+| <a href="{{ url_root }}/import_user/{{ contest.id }}">Import user (CSV)</a>
 <table class="bordered">
   <thead>
     <tr>
       <th>First name</th>
       <th>Last name</th>
       <th>Username</th>
+      <th>RPG Mode?</th>
+      <th>Contest Group</th>
+      <th>Hidden?</th>
       <th>Reevaluate</th>
     </tr>
   </thead>
@@ -20,6 +26,9 @@
       <td>{{ u.first_name }}</td>
       <td>{{ u.last_name }}</td>
       <td><a href="{{ url_root }}/user/{{ u.id }}">{{ u.username }}</a></td>
+      <td>{{ u.rpg }}{% if u.rpg is True %} ({{ u.contest_level }}){% end %}</td>
+      <td>{{ u.contest_group }}</td>
+      <td>{{ u.hidden }}</td>
       <td>
         {% set reevaluation_par_name = "user" %}
         {% set reevaluation_par_value = u.id %}

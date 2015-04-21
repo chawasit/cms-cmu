@@ -1,0 +1,24 @@
+{% extends base.html %}
+
+{% block core %}
+
+<h1>New user</h1>
+
+<h2 id="title_general_info" class="toggling_on">General information</h2>
+<a href="{{ url_root }}/export_user/0">Example CSV</a>
+<div id="general_info">
+  <!-- We use "multipart/form-data" to have Tornado distinguish between missing and empty values. -->
+  <form enctype="multipart/form-data" action="{{ url_root }}/import_user/{{ contest.id }}" method="POST">
+    <table>
+      <tr>
+        <td>CSV File</td>
+        <td><input type="file" name="file" ></td>
+      </tr>
+    </table>
+    <input type="submit"/>
+    <input type="reset" value="Reset" />
+  </form>
+  <div class="hr"></div>
+</div>
+
+{% end %}

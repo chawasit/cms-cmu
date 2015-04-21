@@ -90,7 +90,11 @@
 
 	<h4>Total Score: <b>{{ total_score }}</b></h4>
 	<div class="progress">
-		{% set progress = next_level*100/len(contest.tasks) %}
+		{% try %}
+			{% set progress = next_level*100/len(contest.tasks) %}
+		{% except %}
+			{% set progress = 0.0 %}
+		{% end %}
 		{% set progress_class = "" %}
 		{% if progress >= 100 %}
 			{% set progress_class = "progress-bar-success" %}

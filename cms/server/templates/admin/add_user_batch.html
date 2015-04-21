@@ -1,0 +1,78 @@
+{% extends base.html %}
+
+{% block core %}
+
+<h1>New batch user</h1>
+
+<h2 id="title_general_info" class="toggling_on">General information</h2>
+<div id="general_info">
+  <!-- We use "multipart/form-data" to have Tornado distinguish between missing and empty values. -->
+  <form enctype="multipart/form-data" action="{{ url_root }}/add_user_batch/{{ contest.id }}" method="POST">
+    <table>
+        <td><input type="hidden" name="first_name" value=""/></td>
+        <td><input type="hidden" name="last_name" value=""/></td>
+        <td><input type="hidden" name="password" value=""/></td>
+      <tr>
+        <td>Username ( * will replace with number)</td>
+        <td><input type="text" name="username" value="user*"/></td>
+      </tr>
+      <tr>
+        <td>Start number</td>
+        <td><input type="text" name="start" value="1"/></td>
+      </tr>
+      <tr>
+        <td>Stop number</td>
+        <td><input type="text" name="stop" value="10"/></td>
+      </tr>
+      <tr>
+        <td>Email</td>
+        <td><input type="text" name="email" /></td>
+      </tr>
+      <tr>
+        <td>IP address or subnet</td>
+        <td><input type="text" name="ip" /></td>
+      </tr>
+      <tr>
+        <td>Timezone (like "Europe/Rome", "America/New_York", ...)</td>
+        <td><input type="text" name="timezone" value=""></td>
+      </tr>
+      <tr>
+        <td>First login time during contest</td>
+        <td><input type="text" name="starting_time" value=""></td>
+      </tr>
+      <tr>
+        <td>Delay time (in seconds)</td>
+        <td><input type="text" name="delay_time" value="0"></td>
+      </tr>
+      <tr>
+        <td>Extra time (in seconds)</td>
+        <td><input type="text" name="extra_time" value="0"></td>
+      </tr>
+      <tr>
+        <td>Hidden?</td>
+        <td><input type="checkbox" name="hidden" /></td>
+      </tr>
+      <tr>
+        <td>Primary statements (JSON-encoded dict whose keys are task names and whose values are lists of language codes)</td>
+        <td><input type="text" name="primary_statements" value="{}"></td>
+      </tr>
+      <tr>
+        <td>RPG Mode?</td>
+        <td><input type="checkbox" name="rpg" /></td>
+      </tr>
+      <tr>
+        <td>RPG Mode current level</td>
+        <td><input type="text" name="contest_level" value="1"></td>
+      </tr>
+      <tr>
+        <td>Contest Group ("all" for all contest OR list of contest's id"1,2,3")</td>
+        <td><input type="text" name="contest_group" value="all"></td>
+      </tr>
+    </table>
+    <input type="submit"/>
+    <input type="reset" value="Reset" />
+  </form>
+  <div class="hr"></div>
+</div>
+
+{% end %}

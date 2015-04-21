@@ -89,9 +89,11 @@ CMS.CWSUtils.prototype.display_notification = function(
 
     // The "warning" level is the default, so no check needed.
     if (level == "error") {
-        alert.addClass("alert-error");
+        alert.addClass("alert-danger");
     } else if (level == "success") {
         alert.addClass("alert-success");
+    } else if (level == "warning") {
+        alert.addClass("alert-warning")
     } else alert.addClass("alert-info");
 
     $("#notifications").prepend(alert);

@@ -17,8 +17,8 @@
 <script type="text/javascript" src="{{ url_root }}/static/js/bootstrap.js"></script>
 <script type="text/javascript" src="{{ url_root }}/static/js/bootstrap-sortable.js"></script>
 <script type="text/javascript" src="{{ url_root }}/static/cws_utils.js"></script>
-<link rel="stylesheet" href="{{ url_root }}/static/css/cosmo.css">
-<link href="{{ url_root }}/static/css/cosmo.css" rel="stylesheet" title="main">
+<link rel="stylesheet" href="{{ url_root }}/static/css/bootstrap.css">
+<link href="{{ url_root }}/static/css/bootstrap.css" rel="stylesheet" title="main">
 <link rel="stylesheet" href="{{ url_root }}/static/css/bootstrap-sortable.css">
 <link rel="stylesheet" href="{{ url_root }}/static/cws_style.css">
 <title>CMU</title>
@@ -122,31 +122,32 @@ $(document).ready(function () {
   				    <li><a href="#" class="change-style-menu-item" rel="spacelab"><i class="icon-fixed-width icon-pencil"></i> Spacelab</a></li>
   				  </ul>
   				</li>
-                  {% if current_user.rpg is False %}
-                  <li class="dropdown" id="theme-dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-cogs icon-large"></i> Contest<b class="caret"></b></a>
-                    <ul class="dropdown-menu">
-                      {% from cms.db import Session, Contest %}
-                      {% set sql_session = Session() %}
-                      {% set allow_contests = current_user.contest_group.split(",") %}
-                      {% set contests_list = sorted(sql_session.query(Contest).all(), key=lambda c: c.id) %}
-                      {% for i, row in enumerate(contests_list) %}
-                          {% set allow_contest = False %}
-                          {% if current_user.contest_group == "all" or str(row.id) in allow_contests%}
-                              {% set allow_contest = True %}
-                          {% end %}
-                          {% if allow_contest %}
-                              <li><a href="/contest/{{row.id}}" ><i class="icon-fixed-width icon-pencil"></i> {{row.name}} </a></li>
-                          {% end %}
-                      {% end %}
-                    </ul>
-                  </li>
+          {% if current_user.rpg is False %}
+          <li class="dropdown" id="theme-dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-cogs icon-large"></i> Contest<b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              {% from cms.db import Session, Contest %}
+              {% set sql_session = Session() %}
+              {% set allow_contests = current_user.contest_group.split(",") %}
+              {% set contests_list = sorted(sql_session.query(Contest).all(), key=lambda c: c.id) %}
+              {% for i, row in enumerate(contests_list) %}
+                  {% set allow_contest = False %}
+                  {% if current_user.contest_group == "all" or str(row.id) in allow_contests%}
+                      {% set allow_contest = True %}
                   {% end %}
+                  {% if allow_contest %}
+                      <li><a href="/contest/{{row.id}}" ><i class="icon-fixed-width icon-pencil"></i> {{row.name}} </a></li>
+                  {% end %}
+              {% end %}
+            </ul>
+          </li>
+          {% end %}
   			</ul>
   			<div class="navbar-right">
   				<p class="navbar-text">
   					<span id="user-info">{% raw _("<strong>%(username)s - %(first_name)s %(last_name)s</strong>") % {"first_name": current_user.first_name, "last_name": current_user.last_name, "username": current_user.username} %}</span>
-  					<span id="user-logout"><strong>(<a href="{{ url_root }}/logout">{{ _("Logout") }}</a>)</strong></span>
+            <span id="user-logout"><strong><a href="{{ url_root }}/change_password">{{ _("Change Password") }}</a></strong></span>
+            | <span id="user-logout"><strong><a href="{{ url_root }}/logout">{{ _("Logout") }}</a></strong></span>
   				</p>
   			</div>
       </div>

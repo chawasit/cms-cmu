@@ -86,6 +86,7 @@
                         <thead>
                             <tr>
                                 <th style="vertical-align: middle;" rowspan="2" class="az" data-defaultsign="nospan"  data-toggle="tooltip" data-placement="top" title="Name" data-container="body"><i class="fa fa-user fa-fw"></i>Name</th>
+                                <th style="vertical-align: middle;" rowspan="2" class="az" data-defaultsign="nospan"  data-toggle="tooltip" data-placement="top" title="Name" data-container="body"></i>Username</th>
                         {% for c_iter in contest_list %}
                         {% if str(c_iter.id) in contest_select %}
                                 <th style="text-align: center;" colspan="{{ len(c_iter.tasks)+1 }}" data-mainsort="{{ len(c_iter.tasks)+1 }}" data-toggle="tooltip" data-placement="top" title="Contest - {{ c_iter.name }}" data-container="body">{{ c_iter.name }}</th>
@@ -97,7 +98,7 @@
                         {% for c_iter in contest_list %}
                         {% if str(c_iter.id) in contest_select %}
                             {% for task in c_iter.tasks %}
-                                <th style="text-align: center;" data-toggle="tooltip" data-placement="top" title="{{ c_iter.name }} - {{ task.name }}" data-container="body">{{ task.name }}</th>
+                                <th style="text-align: center;" data-toggle="tooltip" data-placement="top" title="{{ c_iter.name }} - {{ task.title }}" data-container="body">{{ task.title }}</th>
                             {% end %}
                             <th style="text-align: center;" data-toggle="tooltip" data-placement="top" title="{{ c_iter.name }} - Total Score" data-container="body">Total</th>
                         {% end %}
@@ -111,6 +112,7 @@
                                     {% set total_score = 0.0 %}
                                     <tr>
                                     <td><a href="{{ url_root }}/user/{{ user.id }}">{{ "%s %s" % (user.first_name, user.last_name) }}</a></td>
+                                    <td>{{ "%s" % (user.username) }}</td>
                                     {% for c_iter in contest_list %}
                                         {% if str(c_iter.id) in contest_select %}
                                             {% set score = 0.0 %}

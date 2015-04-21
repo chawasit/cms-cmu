@@ -53,6 +53,7 @@ from cms.io import WebService
 from cms.db import Session, Contest, User, Announcement, Question, Message, \
     Submission, File, Task, Dataset, Attachment, Manager, Testcase, \
     SubmissionFormatElement, Statement
+from cms.db.user import generate_random_password
 from cms.db.filecacher import FileCacher
 from cms.grading import compute_changes_for_dataset
 from cms.grading.tasktypes import get_task_type_class
@@ -99,7 +100,7 @@ def argument_reader(func, empty=None):
         RequestHandler.
 
     """
-    def helper(self, dest, name, empty=empty):
+    def helper(self, dest, name, empty=empty, data="nodatahere"):
         """Read the argument called "name" and save it in "dest".
 
         self (RequestHandler): a thing with a get_argument method.
@@ -108,7 +109,19 @@ def argument_reader(func, empty=None):
         empty (object): overrides the default empty value.
 
         """
-        value = self.get_argument(name, None)
+        # for validate data come from other way
+        if data == "nodatahere":
+            print("get from argument "+name)
+            value = self.get_argument(name, None)
+        else:
+            print("get from data "+name)
+            try:
+                value = data[name]
+                value = None if value=="None" else value
+                value = True if value=="TRUE" else value
+                value = False if value=="FALSE" else value
+            except:
+                value = None
         if value is None:
             return
         if value == "":
@@ -283,14 +296,23 @@ class BaseHandler(CommonRequestHandler):
 
     # When a checkbox isn't active it's not sent at all, making it
     # impossible to distinguish between missing and False.
-    def get_bool(self, dest, name):
+    def get_bool(self, dest, name, data="nodatahere"):
         """Parse a boolean.
 
         dest (dict): a place to store the result.
         name (string): the name of the argument and of the item.
 
         """
-        value = self.get_argument(name, False)
+        if data == "nodatahere":
+            value = self.get_argument(name, False)
+        else:
+            try:
+                value = data[name]
+                value = None if value=="None" else value
+                value = True if value=="TRUE" else value
+                value = False if value=="FALSE" else value
+            except:
+                value = None
         try:
             dest[name] = bool(value)
         except:
@@ -1745,7 +1767,9 @@ class AddUserHandler(SimpleContestHandler("add_user.html")):
             self.get_string(attrs, "first_name")
             self.get_string(attrs, "last_name")
             self.get_string(attrs, "username", empty=None)
-            self.get_string(attrs, "password")
+            self.get_string(attrs, "password", empty=None)
+            if attrs["password"] is None:
+                attrs["password"] = generate_random_password()
             self.get_string(attrs, "email")
 
             assert attrs.get("username") is not None, \
@@ -1782,6 +1806,116 @@ class AddUserHandler(SimpleContestHandler("add_user.html")):
             self.redirect("/user/%s" % user.id)
         else:
             self.redirect("/add_user/%s" % contest_id)
+
+class AddUserBatchHandler(SimpleContestHandler("add_user_batch.html")):
+    def post(self, contest_id):
+        self.contest = self.safe_get_item(Contest, contest_id)
+        start = int(self.get_argument("start", 1))
+        stop = int(self.get_argument("stop", 1))+1
+
+        try:
+            attrs = dict()
+            self.get_string(attrs, "first_name")
+            self.get_string(attrs, "last_name")
+            self.get_string(attrs, "username", empty=None)
+            self.get_string(attrs, "password", empty=None)
+            self.get_string(attrs, "email")
+
+            assert attrs.get("username") is not None, \
+                "No username specified."
+
+            self.get_ip_address_or_subnet(attrs, "ip")
+
+            self.get_string(attrs, "timezone", empty=None)
+            self.get_datetime(attrs, "starting_time")
+            self.get_timedelta_sec(attrs, "delay_time")
+            self.get_timedelta_sec(attrs, "extra_time")
+
+            self.get_bool(attrs, "hidden")
+            self.get_string(attrs, "primary_statements")
+
+            self.get_string(attrs, "contest_group")
+            self.get_int(attrs, "contest_level")
+            self.get_bool(attrs, "rpg")
+
+            # Create the user.
+            attrs["contest"] = self.contest
+
+            username = attrs["username"]
+            for number in range( start, stop):
+                attrs["username"] = username.replace("*",str(number))
+                attrs["password"] = generate_random_password()
+                user = User(**attrs)
+                self.sql_session.add(user)
+                del user
+
+        except Exception as error:
+            self.application.service.add_notification(
+                make_datetime(), "Invalid field(s)", repr(error))
+            self.redirect("/add_user_batch/%s" % contest_id)
+            return
+
+        if try_commit(self.sql_session, self):
+            # Create the user on RWS.
+            self.application.service.proxy_service.reinitialize()
+            self.redirect("/userlist/%s" % contest_id)
+        else:
+            self.redirect("/add_user_batch/%s" % contest_id)
+
+class ExportUserHandler(BaseHandler):
+    def get(self, contest_id):
+        if int(contest_id) > 0:
+            self.contest = self.safe_get_item(Contest, contest_id)
+            users = self.contest.users
+        else:
+            users = list()
+
+        self.set_header("Content-Type", "text/csv")
+        self.set_header("Content-Disposition",
+                        "attachment; filename=\"users.csv\"")
+        self.render("user_batch.csv", users=users)
+
+class ImportUserHandler(BaseHandler):
+    def get(self, contest_id):
+        self.contest = self.safe_get_item(Contest, contest_id)
+        self.r_params = self.render_params()
+        self.render("import_user.html", **self.r_params)
+
+    def post(self, contest_id):
+        self.contest = self.safe_get_item(Contest, contest_id)
+
+        import csv
+        uploaded_csv_file = self.request.files['file'][0]['body']
+        lines = uploaded_csv_file.splitlines()
+        for row in csv.DictReader(lines):
+            print(row)
+            attrs = dict()
+            self.get_string(attrs, "first_name", data=row)
+            self.get_string(attrs, "last_name", data=row)
+            self.get_string(attrs, "username", empty=None, data=row)
+            self.get_string(attrs, "password", empty=generate_random_password(), data=row)
+            self.get_string(attrs, "email", data=row)
+            self.get_ip_address_or_subnet(attrs, "ip", data=row)
+            self.get_bool(attrs, "rpg", data=row)
+            self.get_int(attrs, "contest_level", empty=1, data=row)
+            self.get_string(attrs, "contest_group", empty="all", data=row)
+            self.get_bool(attrs, "hidden", data=row)
+            self.get_string(attrs, "primary_statements", data=row)
+            self.get_string(attrs, "timezone", empty=None, data=row)
+            self.get_datetime(attrs, "starting_time")
+            self.get_timedelta_sec(attrs, "delay_time")
+            self.get_timedelta_sec(attrs, "extra_time")
+            attrs["contest"] = self.contest
+            user = User(**attrs)
+            self.sql_session.add(user)
+            del user
+
+        if try_commit(self.sql_session, self):
+            # Create the user on RWS.
+            self.application.service.proxy_service.reinitialize()
+            self.redirect("/userlist/%s" % contest_id)
+        else:
+            self.redirect("/add_user_batch/%s" % contest_id)
 
 
 class SubmissionViewHandler(BaseHandler):
@@ -2071,6 +2205,9 @@ _aws_handlers = [
     (r"/delete_testcase/([0-9]+)", DeleteTestcaseHandler),
     (r"/user/([0-9]+)", UserViewHandler),
     (r"/add_user/([0-9]+)", AddUserHandler),
+    (r"/add_user_batch/([0-9]+)", AddUserBatchHandler),
+    (r"/import_user/([0-9]+)", ImportUserHandler),
+    (r"/export_user/([0-9]+)", ExportUserHandler),
     (r"/add_announcement/([0-9]+)", AddAnnouncementHandler),
     (r"/remove_announcement/([0-9]+)", RemoveAnnouncementHandler),
     (r"/submission/([0-9]+)(?:/([0-9]+))?", SubmissionViewHandler),

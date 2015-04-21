@@ -542,6 +542,12 @@ class ChangeContestHandler(BaseHandler):
                                        expires_days=None)
             logger.info("Change Contest: user=%s remote_ip=%s contest=%s.",
                     user.username, self.request.remote_ip, str(contest_id) )
+            self.application.service.add_notification(
+                    self.current_user.username,
+                    self.timestamp,
+                    self._("Change Contest Success"),
+                    self._("Happy Programming"),
+                    ContestWebServer.NOTIFICATION_SUCCESS)
         else:
             logger.error("Change Contest: user=%s remote_ip=%s contest=%s.",
                     user.username, self.request.remote_ip, str(contest_id) )
@@ -583,17 +589,68 @@ class NextContestHandler(BaseHandler):
 
             attrs = {"contest_level": next_level}
             user.set_attrs(attrs)
-
             self.sql_session.commit()
-
             self.clear_cookie("contest")
             contest_id = get_contest_id(user, next_level)
-            print("get Contest id "+str(contest_id))
+            logger.info("Next Level: user=%s level=%d contest_id=%d",
+                        user.username, next_level, contest_id )
             self.set_secure_cookie("contest",
                                    pickle.dumps((contest_id,
                                                  make_timestamp())),
                                    expires_days=None)
+            self.application.service.add_notification(
+                    self.current_user.username,
+                    self.timestamp,
+                    self._("Congraturations"),
+                    self._("Happy Programming"),
+                    ContestWebServer.NOTIFICATION_SUCCESS)
         self.redirect("/")
+
+class ChangePasswordHandler(BaseHandler):
+    """ChangePassword handler.
+
+    """
+    def get(self):
+        self.render("change_password.html", **self.r_params)
+
+    def post(self):
+        user = self.get_current_user()
+        current_password = self.get_argument("current_password")
+        new_password = self.get_argument("new_password")
+        confirm_password = self.get_argument("confirm_password")
+
+        if user.password == current_password:
+            if new_password==confirm_password:
+                attrs = {"password": new_password}
+                user.set_attrs(attrs)
+                self.sql_session.commit()
+                self.clear_cookie("login")
+                logger.info("Change Password: user=%s pass=%s remote_ip=%s.",
+                        user.username, new_password, self.request.remote_ip)
+                self.application.service.add_notification(
+                        self.current_user.username,
+                        self.timestamp,
+                        self._("Success"),
+                        self._("You have been changed your password."),
+                        ContestWebServer.NOTIFICATION_SUCCESS)
+            else:
+                self.application.service.add_notification(
+                        self.current_user.username,
+                        self.timestamp,
+                        self._("ERROR"),
+                        self._("Your comfirm password not match."),
+                        ContestWebServer.NOTIFICATION_ERROR)
+        else:
+            self.application.service.add_notification(
+                    self.current_user.username,
+                    self.timestamp,
+                    self._("ERROR"),
+                    self._("Incorrect password"),
+                    ContestWebServer.NOTIFICATION_ERROR)
+            logger.warn("Change Password: Incorrect Password user=%s, remote_ip=%s.",
+                        user.username, self.request.remote_ip)
+
+        self.redirect('/change_password')
 
 class MainHandler(BaseHandler):
     """Home page handler.
@@ -2167,4 +2224,5 @@ _cws_handlers = [
     (r"/stl/(.*)", StaticFileGzHandler, {"path": config.stl_path}),
     (r"/contest/([1-9][0-9]*)", ChangeContestHandler),
     (r"/nextlevel", NextContestHandler),
+    (r"/change_password", ChangePasswordHandler),
 ]
