@@ -69,6 +69,7 @@ $(document).ready(init);
           <li class="menu_entry"><a class="menu_link" href="{{ url_root }}/{% if contest is not None %}{{ contest.id }}{% end %}">Overview</a></li>
           <li class="menu_entry"><a class="menu_link" href="{{ url_root }}/resourceslist{% if contest is not None %}/{{ contest.id }}{% end %}">Resource usage</a></li>
           <li class="menu_entry"><a class="menu_link" href="{{ url_root }}/overview_ranking">Ranking Overview</a></li>
+          <li class="menu_entry"><a class="menu_link" href="{{ url_root }}/userlist/1">Users</a></li>
         </ul>
         <div class="hr"></div>
         <select id="contest_selection_select" onchange="utils.switch_contest()">
@@ -92,7 +93,7 @@ $(document).ready(init);
           <ul class="menu">
             <li class="menu_entry"><a class="menu_link" href="{{ url_root }}/contest/{{ contest.id }}">General</a></li>
             <li class="menu_entry"><a class="menu_link" href="{{ url_root }}/ranking/{{ contest.id }}">Ranking</a></li>
-            <li class="menu_entry"><a class="menu_link" href="{{ url_root }}/userlist/{{ contest.id }}">Users</a></li>
+            <!--<li class="menu_entry"><a class="menu_link" href="{{ url_root }}/userlist/{{ contest.id }}">Users</a></li>-->
             <li class="menu_entry"><a class="menu_link" href="{{ url_root }}/tasklist/{{ contest.id }}">Tasks</a></li>
             <li class="menu_entry"><a class="menu_link" href="{{ url_root }}/announcements/{{ contest.id }}">Announcements</a></li>
             <li class="menu_entry">
