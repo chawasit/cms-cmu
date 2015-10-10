@@ -546,7 +546,7 @@ class ChangeContestHandler(BaseHandler):
                     self.current_user.username,
                     self.timestamp,
                     self._("Change Contest Success"),
-                    self._("Happy Programming"),
+                    self._("Happy Codings"),
                     ContestWebServer.NOTIFICATION_SUCCESS)
         else:
             logger.error("Change Contest: user=%s remote_ip=%s contest=%s.",
@@ -602,7 +602,7 @@ class NextContestHandler(BaseHandler):
                     self.current_user.username,
                     self.timestamp,
                     self._("Congraturations"),
-                    self._("Happy Programming"),
+                    self._("Happy Codings"),
                     ContestWebServer.NOTIFICATION_SUCCESS)
         self.redirect("/")
 
